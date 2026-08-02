@@ -142,10 +142,9 @@ fun CoordinateScreen() {
                     )
                 }
 
-                // ========== 自定义参数设置 ==========
+                // 自定义参数设置
                 Spacer(modifier = Modifier.height(12.dp))
 
-                // 分隔线
                 Divider(
                     color = Color(0xFFE2E8F0),
                     modifier = Modifier.padding(vertical = 4.dp)
@@ -231,7 +230,6 @@ fun CoordinateScreen() {
                             onClick = {
                                 viewModel.updateCustomZone("")
                                 viewModel.updateCustomCentralMeridian("")
-                                // 切换回自动计算
                                 if (state.useCustomProjection) {
                                     viewModel.toggleUseCustomProjection()
                                 }
@@ -361,28 +359,57 @@ fun CoordinateScreen() {
 
         Spacer(modifier = Modifier.height(12.dp))
 
-        // 备注和保存
+        // ⭐ 备注和保存（修复显示问题）
         GlassCard(
             modifier = Modifier.fillMaxWidth()
         ) {
+            Text(
+                text = "📝 记录信息",
+                fontSize = 14.sp,
+                fontWeight = FontWeight.SemiBold,
+                color = Color(0xFF0F172A)
+            )
+            Spacer(modifier = Modifier.height(8.dp))
+
+            // 地点名称
             OutlinedTextField(
                 value = state.locationName,
                 onValueChange = { viewModel.updateLocationName(it) },
-                label = { Text("地点名称") },
-                modifier = Modifier.fillMaxWidth(),
+                label = { Text("📍 地点名称") },
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .height(56.dp),
                 shape = RoundedCornerShape(8.dp),
-                singleLine = true
+                singleLine = true,
+                placeholder = { Text("如：红岩村、测试点A", fontSize = 12.sp) }
             )
+
             Spacer(modifier = Modifier.height(8.dp))
+
+            // ⭐ 备注（增加高度和行数）
             OutlinedTextField(
                 value = state.note,
                 onValueChange = { viewModel.updateNote(it) },
-                label = { Text("备注") },
-                modifier = Modifier.fillMaxWidth(),
+                label = { Text("📝 备注") },
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .height(80.dp),
                 shape = RoundedCornerShape(8.dp),
-                singleLine = true
+                maxLines = 3,
+                placeholder = { Text("记录岩性、产状、地质描述等", fontSize = 12.sp) }
             )
+
             Spacer(modifier = Modifier.height(8.dp))
+
+            // 说明文字
+            Text(
+                text = "💡 地点名称和备注会随坐标一起保存",
+                fontSize = 11.sp,
+                color = Color(0xFF94A3B8)
+            )
+
+            Spacer(modifier = Modifier.height(8.dp))
+
             Row(
                 modifier = Modifier.fillMaxWidth(),
                 horizontalArrangement = Arrangement.spacedBy(8.dp)
