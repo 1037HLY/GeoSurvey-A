@@ -35,6 +35,9 @@ class TrackViewModel(
                 INSTANCE ?: TrackViewModel(application).also { INSTANCE = it }
             }
         }
+
+        private const val MIN_ACCURACY = 15f
+        private const val MIN_DISTANCE = 2.0
     }
 
     // 使用内存存储轨迹点
@@ -71,11 +74,6 @@ class TrackViewModel(
                 addTrackPoint(location)
             }
         }
-    }
-
-    companion object {
-        private const val MIN_ACCURACY = 15f
-        private const val MIN_DISTANCE = 2.0
     }
 
     init {
