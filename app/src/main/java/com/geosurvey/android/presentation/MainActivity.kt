@@ -147,9 +147,12 @@ fun AppNavigation() {
             composable("gallery") {
                 PhotoGalleryScreen()
             }
-            // ⭐ 导航页面路由
             composable("navigation") {
                 NavigationScreen()
+            }
+            // ⭐ 坐标转换
+            composable("coordinate") {
+                CoordinateScreen()
             }
         }
     }
