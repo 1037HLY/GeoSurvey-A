@@ -6,7 +6,6 @@ import android.app.Service
 import android.content.Context
 import android.content.Intent
 import android.os.IBinder
-import android.os.Looper
 import androidx.core.app.NotificationCompat
 import com.geosurvey.android.GeoSurveyApplication
 import com.geosurvey.android.presentation.MainActivity
@@ -17,9 +16,6 @@ import com.google.android.gms.location.LocationResult
 import com.google.android.gms.location.LocationServices
 import com.google.android.gms.location.Priority
 
-/**
- * 后台轨迹记录服务
- */
 class TrackingService : Service() {
 
     private lateinit var fusedLocationClient: FusedLocationProviderClient
@@ -47,15 +43,11 @@ class TrackingService : Service() {
     }
 
     override fun onStartCommand(intent: Intent?, flags: Int, startId: Int): Int {
-        // 创建通知
         startForeground(
             GeoSurveyApplication.NOTIFICATION_ID,
             createNotification()
         )
-
-        // 开始定位
         startLocationUpdates()
-
         return START_STICKY
     }
 
@@ -70,7 +62,7 @@ class TrackingService : Service() {
         fusedLocationClient.requestLocationUpdates(
             locationRequest,
             locationCallback,
-            Looper.getMainLooper()
+            android.os.Looper.getMainLooper()
         )
     }
 
