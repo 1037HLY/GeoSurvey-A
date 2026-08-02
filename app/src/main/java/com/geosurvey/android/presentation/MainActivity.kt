@@ -96,6 +96,17 @@ fun AppNavigation() {
                         }
                     }
                 )
+                NavigationBarItem(
+                    icon = { Text("📷", fontSize = 20.sp) },
+                    label = { Text("相机") },
+                    selected = selectedTab == 4,
+                    onClick = {
+                        selectedTab = 4
+                        navController.navigate("camera") {
+                            popUpTo("camera") { inclusive = true }
+                        }
+                    }
+                )
             }
         }
     ) { paddingValues ->
@@ -116,7 +127,6 @@ fun AppNavigation() {
             composable("analysis") {
                 AnalysisScreen(navController = navController)
             }
-            // ⭐ 赤平投影页面 - 从attitudeViewModel获取数据
             composable("stereographic") {
                 val records = attitudeViewModel.state.value.records
                 StereographicScreen(
@@ -124,13 +134,20 @@ fun AppNavigation() {
                     onBack = { navController.popBackStack() }
                 )
             }
-            // ⭐ 玫瑰花图页面 - 从attitudeViewModel获取数据
             composable("rose") {
                 val records = attitudeViewModel.state.value.records
                 RoseDiagramScreen(
                     records = records,
                     onBack = { navController.popBackStack() }
                 )
+            }
+            // ⭐ 相机页面
+            composable("camera") {
+                CameraScreen()
+            }
+            // ⭐ 照片画廊页面
+            composable("gallery") {
+                PhotoGalleryScreen()
             }
         }
     }
