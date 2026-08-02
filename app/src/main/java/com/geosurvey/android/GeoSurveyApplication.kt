@@ -7,6 +7,7 @@ import android.os.Build
 import androidx.room.Room
 import com.geosurvey.android.data.database.AppDatabase
 import com.geosurvey.android.data.repository.AttitudeRepository
+import com.geosurvey.android.data.repository.CoordinateRepository
 import com.geosurvey.android.data.repository.PhotoRepository
 import com.geosurvey.android.data.repository.TrackRepository
 
@@ -46,6 +47,12 @@ class GeoSurveyApplication : Application() {
     val photoRepository by lazy {
         PhotoRepository(
             photoDao = database.photoDao()
+        )
+    }
+
+    val coordinateRepository by lazy {
+        CoordinateRepository(
+            coordinateDao = database.coordinateDao()
         )
     }
 
