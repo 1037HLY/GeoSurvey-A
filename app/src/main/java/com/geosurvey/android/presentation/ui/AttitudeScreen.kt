@@ -17,10 +17,9 @@ import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.core.content.ContextCompat
-import androidx.lifecycle.viewmodel.compose.viewModel
 import com.geosurvey.android.GeoSurveyApplication
-import com.geosurvey.android.presentation.viewmodel.AttitudeState
 import com.geosurvey.android.presentation.viewmodel.AttitudeViewModel
+import kotlinx.coroutines.launch
 import java.text.SimpleDateFormat
 import java.util.*
 
@@ -30,11 +29,12 @@ fun AttitudeScreen() {
     val application = context.applicationContext as GeoSurveyApplication
     val viewModel = remember { AttitudeViewModel.getInstance(application) }
     val state by viewModel.state.collectAsState()
+    val coroutineScope = rememberCoroutineScope()
 
     var noteText by remember { mutableStateOf("") }
     var showRecorded by remember { mutableStateOf(false) }
 
-    // 检查定位权限并获取位置
+    // 检查定位权限
     LaunchedEffect(Unit) {
         val fine = ContextCompat.checkSelfPermission(
             context, Manifest.permission.ACCESS_FINE_LOCATION
@@ -132,7 +132,6 @@ fun AttitudeScreen() {
 
                 Spacer(modifier = Modifier.height(12.dp))
 
-                // 位置信息
                 val location = state.currentLocation
                 if (location != null) {
                     Text(
@@ -275,7 +274,9 @@ fun AttitudeScreen() {
             Spacer(modifier = Modifier.height(8.dp))
             Button(
                 onClick = {
-                    viewModel.deleteAllRecords()
+                    coroutineScope.launch {
+                        viewModel.deleteAllRecords()
+                    }
                 },
                 modifier = Modifier.fillMaxWidth(),
                 colors = ButtonDefaults.buttonColors(
