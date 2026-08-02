@@ -17,8 +17,8 @@ import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import com.geosurvey.android.GeoSurveyApplication
-import com.geosurvey.android.data.model.TrackPoint
 import com.geosurvey.android.domain.service.TrackingService
+import com.geosurvey.android.presentation.viewmodel.TrackPoint
 import com.geosurvey.android.presentation.viewmodel.TrackViewModel
 import java.text.SimpleDateFormat
 import java.util.*
@@ -39,7 +39,6 @@ fun TrackScreen() {
             .fillMaxSize()
             .padding(16.dp)
     ) {
-        // 标题
         Text(
             text = "🛣️ 轨迹记录",
             fontSize = 24.sp,
@@ -49,7 +48,6 @@ fun TrackScreen() {
 
         Spacer(modifier = Modifier.height(16.dp))
 
-        // 统计卡片
         Card(
             modifier = Modifier.fillMaxWidth(),
             colors = CardDefaults.cardColors(
@@ -82,7 +80,6 @@ fun TrackScreen() {
 
         Spacer(modifier = Modifier.height(16.dp))
 
-        // 操作按钮
         Row(
             modifier = Modifier.fillMaxWidth(),
             horizontalArrangement = Arrangement.spacedBy(12.dp)
@@ -125,7 +122,6 @@ fun TrackScreen() {
 
         Spacer(modifier = Modifier.height(16.dp))
 
-        // 删除按钮
         if (pointCount > 0) {
             Button(
                 onClick = { viewModel.deleteAllTrackPoints() },
@@ -140,7 +136,6 @@ fun TrackScreen() {
             Spacer(modifier = Modifier.height(16.dp))
         }
 
-        // 轨迹列表
         Text(
             text = "📋 轨迹点列表 (最新50个)",
             fontSize = 16.sp,
