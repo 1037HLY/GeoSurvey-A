@@ -1,6 +1,7 @@
 package com.geosurvey.android.presentation.ui.analysis
 
 import androidx.compose.foundation.Canvas
+import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material3.*
@@ -98,7 +99,9 @@ fun RoseDiagramScreen(
             elevation = CardDefaults.cardElevation(defaultElevation = 4.dp)
         ) {
             Box(
-                modifier = Modifier.fillMaxSize(),
+                modifier = Modifier
+                    .fillMaxSize()
+                    .background(Color(0xFFF8FAFC)),
                 contentAlignment = Alignment.Center
             ) {
                 Canvas(
@@ -119,27 +122,11 @@ fun RoseDiagramScreen(
                                 val startAngle = bin.angle - binSize / 2
                                 val endAngle = bin.angle + binSize / 2
 
-                                // 绘制扇形
                                 val startRad = Math.toRadians(startAngle.toDouble())
                                 val endRad = Math.toRadians(endAngle.toDouble())
                                 val steps = 20
-                                val path = mutableListOf<Offset>()
 
-                                // 从中心开始
-                                path.add(Offset(centerX, centerY))
-
-                                // 绘制弧线
-                                for (i in 0..steps) {
-                                    val t = startRad + (endRad - startRad) * i / steps
-                                    val x = centerX + radius * sin(t).toFloat()
-                                    val y = centerY + radius * cos(t).toFloat()
-                                    path.add(Offset(x, y))
-                                }
-
-                                // 回到中心
-                                path.add(Offset(centerX, centerY))
-
-                                // 绘制填充
+                                // 绘制从中心到边缘的线（近似扇形）
                                 val colorIntensity = 0.3f + 0.7f * bin.normalizedValue
                                 val color = Color(
                                     red = 0.05f,
@@ -148,9 +135,6 @@ fun RoseDiagramScreen(
                                     alpha = colorIntensity
                                 )
 
-                                // 使用简单的方式绘制扇形 - 画圆点
-                                // 由于Canvas没有直接绘制扇形的方法，使用绘制圆点的近似方式
-                                // 对于每个角度，绘制从中心到边缘的线
                                 for (i in 0..steps) {
                                     val t = startRad + (endRad - startRad) * i / steps
                                     val x = centerX + radius * sin(t).toFloat()
@@ -159,7 +143,7 @@ fun RoseDiagramScreen(
                                         color = color,
                                         start = Offset(centerX, centerY),
                                         end = Offset(x, y),
-                                        strokeWidth = 2f
+                                        strokeWidth = 3f
                                     )
                                 }
                             }
@@ -190,6 +174,26 @@ fun RoseDiagramScreen(
                         end = Offset(centerX, centerY + maxRadius),
                         strokeWidth = 1f
                     )
+
+                    // 绘制方向标签
+                    val labelRadius = maxRadius * 1.1f
+                    val directions = listOf(
+                        "N" to 0f,
+                        "E" to 90f,
+                        "S" to 180f,
+                        "W" to 270f
+                    )
+                    // 在Canvas上无法直接绘制文字，用点代替
+                    directions.forEach { (_, angle) ->
+                        val rad = Math.toRadians(angle.toDouble())
+                        val x = centerX + labelRadius * sin(rad).toFloat()
+                        val y = centerY + labelRadius * cos(rad).toFloat()
+                        drawCircle(
+                            color = Color(0xFF0F172A),
+                            radius = 3f,
+                            center = Offset(x, y)
+                        )
+                    }
 
                     // 绘制中心点
                     drawCircle(
