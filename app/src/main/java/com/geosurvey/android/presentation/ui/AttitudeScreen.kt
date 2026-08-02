@@ -21,6 +21,8 @@ import androidx.compose.ui.unit.sp
 import androidx.core.app.ActivityCompat
 import androidx.core.content.ContextCompat
 import com.geosurvey.android.GeoSurveyApplication
+import com.geosurvey.android.presentation.theme.*
+import com.geosurvey.android.presentation.ui.components.GlassCard
 import com.geosurvey.android.presentation.viewmodel.AttitudeViewModel
 import com.google.android.gms.location.FusedLocationProviderClient
 import com.google.android.gms.location.LocationCallback
@@ -40,16 +42,13 @@ fun AttitudeScreen() {
     val state by viewModel.state.collectAsState()
     val coroutineScope = rememberCoroutineScope()
 
-    // 定位客户端
     val fusedLocationClient = remember { LocationServices.getFusedLocationProviderClient(context) }
     var location by remember { mutableStateOf<Location?>(null) }
 
     var noteText by remember { mutableStateOf("") }
-    var showRecorded by remember { mutableStateOf(false) }
     var showToast by remember { mutableStateOf(false) }
     var toastMessage by remember { mutableStateOf("") }
 
-    // 位置回调
     val locationCallback = remember {
         object : LocationCallback() {
             override fun onLocationResult(result: LocationResult) {
@@ -61,7 +60,6 @@ fun AttitudeScreen() {
         }
     }
 
-    // 检查并请求权限，启动定位
     LaunchedEffect(Unit) {
         val fine = ContextCompat.checkSelfPermission(
             context, Manifest.permission.ACCESS_FINE_LOCATION
@@ -69,42 +67,44 @@ fun AttitudeScreen() {
         val coarse = ContextCompat.checkSelfPermission(
             context, Manifest.permission.ACCESS_COARSE_LOCATION
         )
-
         if (fine == PackageManager.PERMISSION_GRANTED &&
             coarse == PackageManager.PERMISSION_GRANTED
         ) {
-            startLocationUpdates(fusedLocationClient, locationCallback)
+            val locationRequest = LocationRequest.Builder(
+                Priority.PRIORITY_HIGH_ACCURACY, 2000
+            ).apply {
+                setMinUpdateIntervalMillis(1000)
+                setMaxUpdateDelayMillis(5000)
+            }.build()
+            fusedLocationClient.requestLocationUpdates(
+                locationRequest,
+                locationCallback,
+                Looper.getMainLooper()
+            )
         }
     }
 
-    // 组件销毁时清理
     DisposableEffect(Unit) {
         onDispose {
             try {
                 fusedLocationClient.removeLocationUpdates(locationCallback)
-            } catch (e: Exception) {
-                // ignore
-            }
+            } catch (e: Exception) { }
         }
     }
 
-    // 记录按钮点击处理
     fun handleSaveRecord() {
         if (!state.isMeasuring) {
             toastMessage = "请先点击「开始测量」"
             showToast = true
             return
         }
-
         if (location == null) {
             toastMessage = "正在获取定位，请稍后..."
             showToast = true
             return
         }
-
         viewModel.saveRecord(noteText)
         noteText = ""
-        showRecorded = true
         toastMessage = "✅ 产状记录已保存！"
         showToast = true
     }
@@ -114,7 +114,6 @@ fun AttitudeScreen() {
             .fillMaxSize()
             .padding(16.dp)
     ) {
-        // 标题
         Text(
             text = "🔬 地质产状测量",
             fontSize = 24.sp,
@@ -122,94 +121,83 @@ fun AttitudeScreen() {
             color = Color(0xFF0F172A)
         )
 
-        Spacer(modifier = Modifier.height(16.dp))
+        Spacer(modifier = Modifier.height(12.dp))
 
         // 实时测量卡片
-        Card(
-            modifier = Modifier.fillMaxWidth(),
-            colors = CardDefaults.cardColors(
-                containerColor = Color.White.copy(alpha = 0.7f)
-            ),
-            shape = RoundedCornerShape(16.dp),
-            elevation = CardDefaults.cardElevation(defaultElevation = 4.dp)
+        GlassCard(
+            modifier = Modifier.fillMaxWidth()
         ) {
-            Column(
-                modifier = Modifier
-                    .fillMaxWidth()
-                    .padding(16.dp)
+            Row(
+                modifier = Modifier.fillMaxWidth(),
+                horizontalArrangement = Arrangement.SpaceBetween
             ) {
-                Row(
-                    modifier = Modifier.fillMaxWidth(),
-                    horizontalArrangement = Arrangement.SpaceBetween
-                ) {
+                Text(
+                    text = "📐 实时产状",
+                    fontSize = 16.sp,
+                    fontWeight = FontWeight.SemiBold,
+                    color = AccentPurple
+                )
+                Text(
+                    text = if (state.isMeasuring) "● 测量中" else "○ 已停止",
+                    fontSize = 14.sp,
+                    color = if (state.isMeasuring) SecondaryGreen else Color(0xFF94A3B8)
+                )
+            }
+
+            Spacer(modifier = Modifier.height(8.dp))
+
+            Row(
+                modifier = Modifier.fillMaxWidth(),
+                horizontalArrangement = Arrangement.SpaceEvenly
+            ) {
+                Column(horizontalAlignment = Alignment.CenterHorizontally) {
+                    Text("倾向", fontSize = 12.sp, color = Color(0xFF475569))
                     Text(
-                        text = "📐 实时产状",
-                        fontSize = 16.sp,
-                        fontWeight = FontWeight.SemiBold,
-                        color = Color(0xFF8B5CF6)
-                    )
-                    Text(
-                        text = if (state.isMeasuring) "● 测量中" else "○ 已停止",
-                        fontSize = 14.sp,
-                        color = if (state.isMeasuring) Color(0xFF10B981) else Color(0xFF94A3B8)
+                        String.format("%.1f", state.dipDirection) + "°",
+                        fontSize = 22.sp,
+                        fontWeight = FontWeight.Bold,
+                        color = PrimaryBlue
                     )
                 }
-
-                Spacer(modifier = Modifier.height(12.dp))
-
-                Row(
-                    modifier = Modifier.fillMaxWidth(),
-                    horizontalArrangement = Arrangement.SpaceEvenly
-                ) {
-                    Column(horizontalAlignment = Alignment.CenterHorizontally) {
-                        Text("倾向", fontSize = 12.sp, color = Color(0xFF475569))
-                        Text(
-                            String.format("%.1f", state.dipDirection) + "°",
-                            fontSize = 22.sp,
-                            fontWeight = FontWeight.Bold,
-                            color = Color(0xFF0EA5E9)
-                        )
-                    }
-                    Column(horizontalAlignment = Alignment.CenterHorizontally) {
-                        Text("倾角", fontSize = 12.sp, color = Color(0xFF475569))
-                        Text(
-                            String.format("%.1f", state.dipAngle) + "°",
-                            fontSize = 22.sp,
-                            fontWeight = FontWeight.Bold,
-                            color = Color(0xFF10B981)
-                        )
-                    }
-                    Column(horizontalAlignment = Alignment.CenterHorizontally) {
-                        Text("走向", fontSize = 12.sp, color = Color(0xFF475569))
-                        Text(
-                            String.format("%.1f", state.strike) + "°",
-                            fontSize = 22.sp,
-                            fontWeight = FontWeight.Bold,
-                            color = Color(0xFF8B5CF6)
-                        )
-                    }
-                }
-
-                Spacer(modifier = Modifier.height(12.dp))
-
-                if (location != null) {
+                Column(horizontalAlignment = Alignment.CenterHorizontally) {
+                    Text("倾角", fontSize = 12.sp, color = Color(0xFF475569))
                     Text(
-                        text = "📍 ${String.format("%.6f", location!!.latitude)}, ${String.format("%.6f", location!!.longitude)}",
-                        fontSize = 12.sp,
-                        color = Color(0xFF475569)
-                    )
-                    Text(
-                        text = "海拔: ${location!!.altitude?.let { String.format("%.1f", it) } ?: "--"}m | 精度: ±${location!!.accuracy?.let { String.format("%.1f", it) } ?: "--"}m",
-                        fontSize = 12.sp,
-                        color = Color(0xFF475569)
-                    )
-                } else {
-                    Text(
-                        text = "⏳ 正在获取定位...",
-                        fontSize = 12.sp,
-                        color = Color(0xFFF59E0B)
+                        String.format("%.1f", state.dipAngle) + "°",
+                        fontSize = 22.sp,
+                        fontWeight = FontWeight.Bold,
+                        color = SecondaryGreen
                     )
                 }
+                Column(horizontalAlignment = Alignment.CenterHorizontally) {
+                    Text("走向", fontSize = 12.sp, color = Color(0xFF475569))
+                    Text(
+                        String.format("%.1f", state.strike) + "°",
+                        fontSize = 22.sp,
+                        fontWeight = FontWeight.Bold,
+                        color = AccentPurple
+                    )
+                }
+            }
+
+            Spacer(modifier = Modifier.height(8.dp))
+
+            if (location != null) {
+                Text(
+                    text = "📍 ${String.format("%.6f", location!!.latitude)}, ${String.format("%.6f", location!!.longitude)}",
+                    fontSize = 12.sp,
+                    color = Color(0xFF475569)
+                )
+                Text(
+                    text = "海拔: ${location!!.altitude?.let { String.format("%.1f", it) } ?: "--"}m | 精度: ±${location!!.accuracy?.let { String.format("%.1f", it) } ?: "--"}m",
+                    fontSize = 12.sp,
+                    color = Color(0xFF475569)
+                )
+            } else {
+                Text(
+                    text = "⏳ 正在获取定位...",
+                    fontSize = 12.sp,
+                    color = AccentOrange
+                )
             }
         }
 
@@ -230,7 +218,7 @@ fun AttitudeScreen() {
                 },
                 modifier = Modifier.weight(1f),
                 colors = ButtonDefaults.buttonColors(
-                    containerColor = if (state.isMeasuring) Color(0xFFEF4444) else Color(0xFF0EA5E9)
+                    containerColor = if (state.isMeasuring) ErrorRed else PrimaryBlue
                 ),
                 shape = RoundedCornerShape(12.dp)
             ) {
@@ -241,7 +229,7 @@ fun AttitudeScreen() {
                 onClick = { handleSaveRecord() },
                 modifier = Modifier.weight(1f),
                 colors = ButtonDefaults.buttonColors(
-                    containerColor = Color(0xFF10B981)
+                    containerColor = SecondaryGreen
                 ),
                 shape = RoundedCornerShape(12.dp),
                 enabled = state.isMeasuring
@@ -252,7 +240,6 @@ fun AttitudeScreen() {
 
         Spacer(modifier = Modifier.height(12.dp))
 
-        // 备注输入
         OutlinedTextField(
             value = noteText,
             onValueChange = { noteText = it },
@@ -262,21 +249,14 @@ fun AttitudeScreen() {
             maxLines = 2
         )
 
-        Spacer(modifier = Modifier.height(16.dp))
+        Spacer(modifier = Modifier.height(12.dp))
 
         // 统计信息
-        Card(
-            modifier = Modifier.fillMaxWidth(),
-            colors = CardDefaults.cardColors(
-                containerColor = Color.White.copy(alpha = 0.7f)
-            ),
-            shape = RoundedCornerShape(16.dp),
-            elevation = CardDefaults.cardElevation(defaultElevation = 4.dp)
+        GlassCard(
+            modifier = Modifier.fillMaxWidth()
         ) {
             Row(
-                modifier = Modifier
-                    .fillMaxWidth()
-                    .padding(12.dp),
+                modifier = Modifier.fillMaxWidth(),
                 horizontalArrangement = Arrangement.SpaceEvenly
             ) {
                 Column(horizontalAlignment = Alignment.CenterHorizontally) {
@@ -292,7 +272,6 @@ fun AttitudeScreen() {
 
         Spacer(modifier = Modifier.height(12.dp))
 
-        // 历史记录
         Text(
             text = "📋 历史记录",
             fontSize = 16.sp,
@@ -324,7 +303,6 @@ fun AttitudeScreen() {
             }
         }
 
-        // 删除按钮
         if (state.recordCount > 0) {
             Spacer(modifier = Modifier.height(8.dp))
             Button(
@@ -335,7 +313,7 @@ fun AttitudeScreen() {
                 },
                 modifier = Modifier.fillMaxWidth(),
                 colors = ButtonDefaults.buttonColors(
-                    containerColor = Color(0xFFEF4444).copy(alpha = 0.8f)
+                    containerColor = ErrorRed.copy(alpha = 0.8f)
                 ),
                 shape = RoundedCornerShape(12.dp)
             ) {
@@ -344,7 +322,6 @@ fun AttitudeScreen() {
         }
     }
 
-    // Toast提示
     if (showToast) {
         LaunchedEffect(Unit) {
             kotlinx.coroutines.delay(2500)
@@ -353,90 +330,47 @@ fun AttitudeScreen() {
         Snackbar(
             modifier = Modifier.padding(16.dp),
             containerColor = when {
-                toastMessage.contains("✅") -> Color(0xFF10B981)
-                toastMessage.contains("请先") || toastMessage.contains("正在") -> Color(0xFFF59E0B)
-                else -> Color(0xFFEF4444)
+                toastMessage.contains("✅") -> SecondaryGreen
+                else -> AccentOrange
             }
         ) {
             Text(toastMessage, color = Color.White)
         }
     }
-
-    // 记录成功提示
-    if (showRecorded) {
-        LaunchedEffect(Unit) {
-            kotlinx.coroutines.delay(2000)
-            showRecorded = false
-        }
-        // 已通过上面的Snackbar显示
-    }
-}
-
-// 启动定位更新函数
-fun startLocationUpdates(
-    fusedLocationClient: FusedLocationProviderClient,
-    locationCallback: LocationCallback
-) {
-    try {
-        val locationRequest = LocationRequest.Builder(
-            Priority.PRIORITY_HIGH_ACCURACY, 2000
-        ).apply {
-            setMinUpdateIntervalMillis(1000)
-            setMaxUpdateDelayMillis(5000)
-        }.build()
-
-        fusedLocationClient.requestLocationUpdates(
-            locationRequest,
-            locationCallback,
-            Looper.getMainLooper()
-        )
-    } catch (e: Exception) {
-        e.printStackTrace()
-    }
 }
 
 @Composable
 fun AttitudeRecordItem(record: com.geosurvey.android.data.model.AttitudeRecord) {
-    Card(
-        modifier = Modifier.fillMaxWidth(),
-        colors = CardDefaults.cardColors(
-            containerColor = Color.White.copy(alpha = 0.5f)
-        ),
-        shape = RoundedCornerShape(8.dp)
+    GlassCard(
+        modifier = Modifier.fillMaxWidth()
     ) {
-        Column(
-            modifier = Modifier
-                .fillMaxWidth()
-                .padding(12.dp)
+        Row(
+            modifier = Modifier.fillMaxWidth(),
+            horizontalArrangement = Arrangement.SpaceBetween
         ) {
-            Row(
-                modifier = Modifier.fillMaxWidth(),
-                horizontalArrangement = Arrangement.SpaceBetween
-            ) {
-                Text(
-                    text = "倾向 ${String.format("%.1f", record.dipDirection)}° | 倾角 ${String.format("%.1f", record.dipAngle)}° | 走向 ${String.format("%.1f", record.strike)}°",
-                    fontSize = 13.sp,
-                    fontWeight = FontWeight.Medium,
-                    color = Color(0xFF0F172A)
-                )
-                Text(
-                    text = formatDate(record.timestamp),
-                    fontSize = 11.sp,
-                    color = Color(0xFF94A3B8)
-                )
-            }
             Text(
-                text = "📍 ${String.format("%.6f", record.latitude)}, ${String.format("%.6f", record.longitude)}",
-                fontSize = 11.sp,
-                color = Color(0xFF475569)
+                text = "倾向 ${String.format("%.1f", record.dipDirection)}° | 倾角 ${String.format("%.1f", record.dipAngle)}° | 走向 ${String.format("%.1f", record.strike)}°",
+                fontSize = 13.sp,
+                fontWeight = FontWeight.Medium,
+                color = Color(0xFF0F172A)
             )
-            if (record.note.isNotEmpty()) {
-                Text(
-                    text = "📝 ${record.note}",
-                    fontSize = 11.sp,
-                    color = Color(0xFF6B7280)
-                )
-            }
+            Text(
+                text = formatDate(record.timestamp),
+                fontSize = 11.sp,
+                color = Color(0xFF94A3B8)
+            )
+        }
+        Text(
+            text = "📍 ${String.format("%.6f", record.latitude)}, ${String.format("%.6f", record.longitude)}",
+            fontSize = 11.sp,
+            color = Color(0xFF475569)
+        )
+        if (record.note.isNotEmpty()) {
+            Text(
+                text = "📝 ${record.note}",
+                fontSize = 11.sp,
+                color = Color(0xFF6B7280)
+            )
         }
     }
 }
