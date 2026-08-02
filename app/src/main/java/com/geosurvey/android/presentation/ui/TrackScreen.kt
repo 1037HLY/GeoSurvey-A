@@ -17,7 +17,7 @@ import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import com.geosurvey.android.GeoSurveyApplication
-import com.geosurvey.android.data.model.TrackPointEntity
+import com.geosurvey.android.data.model.TrackPoint
 import com.geosurvey.android.domain.service.TrackingService
 import com.geosurvey.android.presentation.viewmodel.TrackViewModel
 import java.text.SimpleDateFormat
@@ -28,7 +28,6 @@ fun TrackScreen() {
     val context = LocalContext.current
     val application = context.applicationContext as GeoSurveyApplication
 
-    // ⭐ 使用单例获取TrackViewModel
     val viewModel = remember { TrackViewModel.getInstance(application) }
 
     val isRecording by viewModel.isRecording.collectAsState()
@@ -176,7 +175,7 @@ fun TrackScreen() {
 }
 
 @Composable
-fun TrackPointItem(point: TrackPointEntity) {
+fun TrackPointItem(point: TrackPoint) {
     Card(
         modifier = Modifier.fillMaxWidth(),
         colors = CardDefaults.cardColors(
