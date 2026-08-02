@@ -8,6 +8,7 @@ import android.os.Looper
 import androidx.camera.core.*
 import androidx.camera.lifecycle.ProcessCameraProvider
 import androidx.camera.view.PreviewView
+import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material3.*
@@ -26,7 +27,6 @@ import androidx.core.content.ContextCompat
 import androidx.lifecycle.LifecycleOwner
 import com.geosurvey.android.GeoSurveyApplication
 import com.geosurvey.android.presentation.viewmodel.CameraViewModel
-import com.geosurvey.android.presentation.viewmodel.TrackViewModel
 import com.geosurvey.android.utils.WatermarkHelper
 import com.google.android.gms.location.FusedLocationProviderClient
 import com.google.android.gms.location.LocationCallback
@@ -37,7 +37,6 @@ import com.google.android.gms.location.Priority
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.withContext
-import java.io.File
 import java.util.concurrent.ExecutorService
 import java.util.concurrent.Executors
 
@@ -320,12 +319,12 @@ fun CameraScreen() {
                                 isSaving = true
                                 coroutineScope.launch {
                                     val helper = WatermarkHelper(context)
-                                    val location = state.currentLocation
+                                    val loc = state.currentLocation
 
                                     val data = WatermarkHelper.WatermarkData(
-                                        latitude = location?.latitude ?: 0.0,
-                                        longitude = location?.longitude ?: 0.0,
-                                        altitude = location?.altitude,
+                                        latitude = loc?.latitude ?: 0.0,
+                                        longitude = loc?.longitude ?: 0.0,
+                                        altitude = loc?.altitude,
                                         locationName = locationNameText,
                                         dipDirection = state.dipDirection,
                                         dipAngle = state.dipAngle,
