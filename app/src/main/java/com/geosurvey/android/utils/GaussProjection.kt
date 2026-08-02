@@ -169,4 +169,53 @@ object GaussProjection {
             zone * 3.0
         }
     }
+
+    /**
+     * ⭐ 使用自定义带号和中央子午线进行高斯投影
+     * @param lat 纬度 (度)
+     * @param lon 经度 (度)
+     * @param zone 自定义带号
+     * @param centralMeridian 自定义中央子午线 (度)
+     */
+    fun blhToGaussWithCustom(
+        lat: Double,
+        lon: Double,
+        zone: Int,
+        centralMeridian: Double
+    ): GaussCoord {
+        val latRad = Math.toRadians(lat)
+        val lonRad = Math.toRadians(lon)
+        val cmRad = Math.toRadians(centralMeridian)
+        val dLon = lonRad - cmRad
+
+        // 计算辅助量
+        val a0 = 1 - E2 / 4 - 3 * E2 * E2 / 64 - 5 * E2 * E2 * E2 / 256
+        val a2 = 3 * E2 / 8 + 3 * E2 * E2 / 32 + 45 * E2 * E2 * E2 / 1024
+        val a4 = 15 * E2 * E2 / 256 + 45 * E2 * E2 * E2 / 1024
+        val a6 = 35 * E2 * E2 * E2 / 3072
+
+        // 子午线弧长
+        val B = A * (a0 * latRad - a2 * sin(2 * latRad) + a4 * sin(4 * latRad) - a6 * sin(6 * latRad))
+
+        val t = tan(latRad)
+        val eta2 = E2 / (1 - E2) * cos(latRad) * cos(latRad)
+        val N = A / sqrt(1 - E2 * sin(latRad) * sin(latRad))
+
+        val x = B + N / 2 * t * dLon * dLon +
+                N / 24 * t * (5 - t * t + 9 * eta2 + 4 * eta2 * eta2) * dLon * dLon * dLon * dLon +
+                N / 720 * t * (61 - 58 * t * t + t * t * t * t) * dLon * dLon * dLon * dLon * dLon * dLon
+
+        val y = N * dLon +
+                N / 6 * (1 - t * t + eta2) * dLon * dLon * dLon +
+                N / 120 * (5 - 18 * t * t + t * t * t * t + 14 * eta2 - 58 * eta2 * t * t) * dLon * dLon * dLon * dLon * dLon
+
+        val yFinal = y + 500000
+
+        return GaussCoord(
+            x = x,
+            y = yFinal,
+            zone = zone,
+            centralMeridian = centralMeridian
+        )
+    }
 }
