@@ -18,7 +18,6 @@ import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.core.content.ContextCompat
-import androidx.lifecycle.ViewModelProvider
 import androidx.lifecycle.viewmodel.compose.viewModel
 import com.geosurvey.android.GeoSurveyApplication
 import com.geosurvey.android.presentation.viewmodel.LocationState
@@ -34,15 +33,8 @@ fun HomeScreen() {
         factory = LocationViewModelFactory(context)
     )
 
-    // ⭐ 不使用TrackViewModelFactory，直接创建
-    val trackViewModel: TrackViewModel = viewModel(
-        factory = object : ViewModelProvider.Factory {
-            override fun <T : androidx.lifecycle.ViewModel> create(modelClass: Class<T>): T {
-                @Suppress("UNCHECKED_CAST")
-                return TrackViewModel(application) as T
-            }
-        }
-    )
+    // ⭐ 使用单例获取TrackViewModel
+    val trackViewModel = remember { TrackViewModel.getInstance(application) }
 
     val state by locationViewModel.state.collectAsState()
     val isRecording by trackViewModel.isRecording.collectAsState()
@@ -123,6 +115,7 @@ fun HomeScreen() {
 
         Spacer(modifier = Modifier.height(16.dp))
 
+        // 轨迹记录状态指示
         Card(
             modifier = Modifier.fillMaxWidth(),
             colors = CardDefaults.cardColors(
