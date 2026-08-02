@@ -18,13 +18,12 @@ import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.core.content.ContextCompat
-import androidx.lifecycle.viewmodel.compose.viewModel
 import androidx.lifecycle.ViewModelProvider
+import androidx.lifecycle.viewmodel.compose.viewModel
 import com.geosurvey.android.GeoSurveyApplication
 import com.geosurvey.android.presentation.viewmodel.LocationState
 import com.geosurvey.android.presentation.viewmodel.LocationViewModel
 import com.geosurvey.android.presentation.viewmodel.TrackViewModel
-import com.geosurvey.android.presentation.viewmodel.TrackViewModelFactory
 
 @Composable
 fun HomeScreen() {
@@ -34,8 +33,15 @@ fun HomeScreen() {
     val locationViewModel: LocationViewModel = viewModel(
         factory = LocationViewModelFactory(context)
     )
+
+    // ⭐ 不使用TrackViewModelFactory，直接创建
     val trackViewModel: TrackViewModel = viewModel(
-        factory = TrackViewModelFactory(application)
+        factory = object : ViewModelProvider.Factory {
+            override fun <T : androidx.lifecycle.ViewModel> create(modelClass: Class<T>): T {
+                @Suppress("UNCHECKED_CAST")
+                return TrackViewModel(application) as T
+            }
+        }
     )
 
     val state by locationViewModel.state.collectAsState()
@@ -75,10 +81,9 @@ fun HomeScreen() {
         }
     }
 
-    // ⭐ 监听位置更新，自动保存到轨迹
+    // 监听位置更新，自动保存到轨迹
     LaunchedEffect(state.location) {
         state.location?.let { location ->
-            // 如果正在记录轨迹，自动保存
             if (isRecording) {
                 trackViewModel.addTrackPoint(location)
             }
@@ -92,7 +97,6 @@ fun HomeScreen() {
         horizontalAlignment = Alignment.CenterHorizontally,
         verticalArrangement = Arrangement.Top
     ) {
-        // 标题
         Text(
             text = "🏔️ 地质勘查工具箱",
             fontSize = 28.sp,
@@ -111,17 +115,14 @@ fun HomeScreen() {
 
         Spacer(modifier = Modifier.height(24.dp))
 
-        // 定位信息卡片
         LocationInfoCard(state)
 
         Spacer(modifier = Modifier.height(16.dp))
 
-        // 卫星状态卡片
         SatelliteStatusCard(state)
 
         Spacer(modifier = Modifier.height(16.dp))
 
-        // 轨迹记录状态指示
         Card(
             modifier = Modifier.fillMaxWidth(),
             colors = CardDefaults.cardColors(
@@ -149,7 +150,6 @@ fun HomeScreen() {
 
         Spacer(modifier = Modifier.height(16.dp))
 
-        // 操作按钮
         Row(
             modifier = Modifier.fillMaxWidth(),
             horizontalArrangement = Arrangement.spacedBy(12.dp)
@@ -337,7 +337,7 @@ fun SatelliteStatusCard(state: LocationState) {
     }
 }
 
-// ViewModel Factory
+// LocationViewModel Factory
 class LocationViewModelFactory(private val context: Context) : ViewModelProvider.Factory {
     override fun <T : androidx.lifecycle.ViewModel> create(modelClass: Class<T>): T {
         if (modelClass.isAssignableFrom(LocationViewModel::class.java)) {
