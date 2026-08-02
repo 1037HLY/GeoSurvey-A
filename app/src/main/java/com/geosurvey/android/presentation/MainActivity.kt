@@ -15,6 +15,7 @@ import androidx.navigation.compose.NavHost
 import androidx.navigation.compose.composable
 import androidx.navigation.compose.rememberNavController
 import com.geosurvey.android.presentation.theme.GeoSurveyTheme
+import com.geosurvey.android.presentation.ui.AttitudeScreen
 import com.geosurvey.android.presentation.ui.HomeScreen
 import com.geosurvey.android.presentation.ui.TrackScreen
 
@@ -67,6 +68,17 @@ fun AppNavigation() {
                         }
                     }
                 )
+                NavigationBarItem(
+                    icon = { Text("🔬", fontSize = 20.sp) },
+                    label = { Text("产状") },
+                    selected = selectedTab == 2,
+                    onClick = {
+                        selectedTab = 2
+                        navController.navigate("attitude") {
+                            popUpTo("attitude") { inclusive = true }
+                        }
+                    }
+                )
             }
         }
     ) { paddingValues ->
@@ -80,6 +92,9 @@ fun AppNavigation() {
             }
             composable("track") {
                 TrackScreen()
+            }
+            composable("attitude") {
+                AttitudeScreen()
             }
         }
     }
