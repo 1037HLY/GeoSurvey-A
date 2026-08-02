@@ -6,6 +6,7 @@ import android.location.Location
 import android.os.Looper
 import androidx.compose.animation.core.*
 import androidx.compose.foundation.background
+import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
@@ -391,12 +392,10 @@ fun CompassIndicator(state: NavigationState) {
                             .fillMaxSize()
                             .rotate(targetDirection)
                     ) {
-                        // 绘制三角形箭头
                         val centerX = size.width / 2
                         val centerY = size.height / 2
                         val arrowSize = size.width * 0.3f
 
-                        // 绘制箭头
                         drawLine(
                             color = if (isOffTrack) Color(0xFFEF4444) else Color(0xFF0EA5E9),
                             start = androidx.compose.ui.geometry.Offset(
@@ -409,7 +408,6 @@ fun CompassIndicator(state: NavigationState) {
                             ),
                             strokeWidth = 4f
                         )
-                        // 箭头头部
                         drawLine(
                             color = if (isOffTrack) Color(0xFFEF4444) else Color(0xFF0EA5E9),
                             start = androidx.compose.ui.geometry.Offset(
@@ -511,9 +509,4 @@ fun TargetItem(
             }
         }
     }
-}
-
-// 扩展函数
-fun Modifier.clickable(onClick: () -> Unit): Modifier {
-    return androidx.compose.foundation.clickable(onClick = onClick)
 }
