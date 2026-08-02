@@ -28,8 +28,19 @@ jobs:
     - name: Grant execute permission for gradlew
       run: chmod +x gradlew
     
+    - name: Clean everything
+      run: |
+        ./gradlew clean
+        rm -rf app/build
+        rm -rf .gradle
+        rm -rf ~/.gradle/caches/
+        rm -rf ~/.gradle/wrapper/
+        rm -rf app/build/tmp/kapt3/
+        rm -rf app/build/generated/source/kapt/
+        rm -rf app/build/generated/source/kaptKotlin/
+    
     - name: Build Debug APK
-      run: ./gradlew assembleDebug
+      run: ./gradlew assembleDebug --no-build-cache --rerun-tasks
     
     - name: Upload Debug APK
       uses: actions/upload-artifact@v4
