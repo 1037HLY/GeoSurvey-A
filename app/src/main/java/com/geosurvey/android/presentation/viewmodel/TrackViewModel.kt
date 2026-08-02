@@ -7,14 +7,20 @@ import android.content.Intent
 import android.content.IntentFilter
 import android.location.Location
 import androidx.lifecycle.AndroidViewModel
-import androidx.lifecycle.viewModelScope
 import com.geosurvey.android.GeoSurveyApplication
-import com.geosurvey.android.data.model.TrackPoint
-import com.geosurvey.android.data.repository.TrackDataRepository
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
-import kotlinx.coroutines.launch
+
+data class TrackPoint(
+    val latitude: Double,
+    val longitude: Double,
+    val altitude: Double? = null,
+    val speed: Float? = null,
+    val bearing: Float? = null,
+    val accuracy: Float? = null,
+    val timestamp: Long = System.currentTimeMillis()
+)
 
 class TrackViewModel(
     application: Application
@@ -31,17 +37,15 @@ class TrackViewModel(
         }
     }
 
-    private val trackRepository: TrackDataRepository =
-        (application as GeoSurveyApplication).trackRepository
-
-    private val _isRecording = MutableStateFlow(false)
-    val isRecording: StateFlow<Boolean> = _isRecording.asStateFlow()
-
+    // 使用内存存储轨迹点
     private val _trackPoints = MutableStateFlow<List<TrackPoint>>(emptyList())
     val trackPoints: StateFlow<List<TrackPoint>> = _trackPoints.asStateFlow()
 
     private val _pointCount = MutableStateFlow(0)
     val pointCount: StateFlow<Int> = _pointCount.asStateFlow()
+
+    private val _isRecording = MutableStateFlow(false)
+    val isRecording: StateFlow<Boolean> = _isRecording.asStateFlow()
 
     private var lastLocation: Location? = null
     private var isReceiverRegistered = false
@@ -75,7 +79,6 @@ class TrackViewModel(
     }
 
     init {
-        loadTrackPoints()
         registerReceiver()
     }
 
@@ -114,36 +117,26 @@ class TrackViewModel(
             }
         }
 
-        viewModelScope.launch {
-            val point = TrackPoint(
-                latitude = location.latitude,
-                longitude = location.longitude,
-                altitude = location.altitude,
-                speed = location.speed,
-                bearing = location.bearing,
-                accuracy = location.accuracy,
-                timestamp = System.currentTimeMillis()
-            )
-            trackRepository.insertTrackPoint(point)
-            lastLocation = location
-            loadTrackPoints()
-        }
-    }
+        val point = TrackPoint(
+            latitude = location.latitude,
+            longitude = location.longitude,
+            altitude = location.altitude,
+            speed = location.speed,
+            bearing = location.bearing,
+            accuracy = location.accuracy,
+            timestamp = System.currentTimeMillis()
+        )
 
-    fun loadTrackPoints() {
-        viewModelScope.launch {
-            trackRepository.getAllTrackPoints().collect { points ->
-                _trackPoints.value = points
-                _pointCount.value = points.size
-            }
-        }
+        val currentPoints = _trackPoints.value.toMutableList()
+        currentPoints.add(point)
+        _trackPoints.value = currentPoints
+        _pointCount.value = currentPoints.size
+        lastLocation = location
     }
 
     fun deleteAllTrackPoints() {
-        viewModelScope.launch {
-            trackRepository.deleteAllTrackPoints()
-            loadTrackPoints()
-        }
+        _trackPoints.value = emptyList()
+        _pointCount.value = 0
     }
 
     override fun onCleared() {
