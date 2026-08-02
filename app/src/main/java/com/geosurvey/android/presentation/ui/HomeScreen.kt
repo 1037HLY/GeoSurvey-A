@@ -29,11 +29,10 @@ fun HomeScreen() {
     val context = LocalContext.current
     val application = context.applicationContext as GeoSurveyApplication
 
-    val locationViewModel: LocationViewModel = viewModel(
-        factory = LocationViewModelFactory(context)
-    )
+    // ⭐ 直接使用 viewModel()，不需要 Factory
+    val locationViewModel: LocationViewModel = viewModel()
 
-    // ⭐ 使用单例获取TrackViewModel
+    // 使用单例获取TrackViewModel
     val trackViewModel = remember { TrackViewModel.getInstance(application) }
 
     val state by locationViewModel.state.collectAsState()
@@ -89,6 +88,7 @@ fun HomeScreen() {
         horizontalAlignment = Alignment.CenterHorizontally,
         verticalArrangement = Arrangement.Top
     ) {
+        // 标题
         Text(
             text = "🏔️ 地质勘查工具箱",
             fontSize = 28.sp,
@@ -107,10 +107,12 @@ fun HomeScreen() {
 
         Spacer(modifier = Modifier.height(24.dp))
 
+        // 定位信息卡片
         LocationInfoCard(state)
 
         Spacer(modifier = Modifier.height(16.dp))
 
+        // 卫星状态卡片
         SatelliteStatusCard(state)
 
         Spacer(modifier = Modifier.height(16.dp))
@@ -143,6 +145,7 @@ fun HomeScreen() {
 
         Spacer(modifier = Modifier.height(16.dp))
 
+        // 操作按钮
         Row(
             modifier = Modifier.fillMaxWidth(),
             horizontalArrangement = Arrangement.spacedBy(12.dp)
@@ -327,16 +330,5 @@ fun SatelliteStatusCard(state: LocationState) {
                 color = Color(0xFF94A3B8)
             )
         }
-    }
-}
-
-// LocationViewModel Factory
-class LocationViewModelFactory(private val context: Context) : ViewModelProvider.Factory {
-    override fun <T : androidx.lifecycle.ViewModel> create(modelClass: Class<T>): T {
-        if (modelClass.isAssignableFrom(LocationViewModel::class.java)) {
-            @Suppress("UNCHECKED_CAST")
-            return LocationViewModel(context) as T
-        }
-        throw IllegalArgumentException("Unknown ViewModel class")
     }
 }
