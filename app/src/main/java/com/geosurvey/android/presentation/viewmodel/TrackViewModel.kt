@@ -9,8 +9,8 @@ import android.location.Location
 import androidx.lifecycle.AndroidViewModel
 import androidx.lifecycle.viewModelScope
 import com.geosurvey.android.GeoSurveyApplication
-import com.geosurvey.android.data.model.TrackPointEntity
-import com.geosurvey.android.data.repository.TrackRepository
+import com.geosurvey.android.data.model.TrackPoint
+import com.geosurvey.android.data.repository.TrackDataRepository
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
@@ -31,14 +31,14 @@ class TrackViewModel(
         }
     }
 
-    private val trackRepository: TrackRepository =
+    private val trackRepository: TrackDataRepository =
         (application as GeoSurveyApplication).trackRepository
 
     private val _isRecording = MutableStateFlow(false)
     val isRecording: StateFlow<Boolean> = _isRecording.asStateFlow()
 
-    private val _trackPoints = MutableStateFlow<List<TrackPointEntity>>(emptyList())
-    val trackPoints: StateFlow<List<TrackPointEntity>> = _trackPoints.asStateFlow()
+    private val _trackPoints = MutableStateFlow<List<TrackPoint>>(emptyList())
+    val trackPoints: StateFlow<List<TrackPoint>> = _trackPoints.asStateFlow()
 
     private val _pointCount = MutableStateFlow(0)
     val pointCount: StateFlow<Int> = _pointCount.asStateFlow()
@@ -46,7 +46,6 @@ class TrackViewModel(
     private var lastLocation: Location? = null
     private var isReceiverRegistered = false
 
-    // 广播接收器
     private val locationReceiver = object : BroadcastReceiver() {
         override fun onReceive(context: Context, intent: Intent) {
             val lat = intent.getDoubleExtra("latitude", 0.0)
@@ -116,7 +115,7 @@ class TrackViewModel(
         }
 
         viewModelScope.launch {
-            val point = TrackPointEntity(
+            val point = TrackPoint(
                 latitude = location.latitude,
                 longitude = location.longitude,
                 altitude = location.altitude,
