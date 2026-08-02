@@ -4,8 +4,9 @@ import android.app.Application
 import android.app.NotificationChannel
 import android.app.NotificationManager
 import android.os.Build
+import androidx.room.Room
 import com.geosurvey.android.data.database.AppDatabase
-import com.geosurvey.android.data.repository.TrackRepository
+import com.geosurvey.android.data.repository.TrackDataRepository
 
 class GeoSurveyApplication : Application() {
 
@@ -18,19 +19,18 @@ class GeoSurveyApplication : Application() {
         const val NOTIFICATION_ID = 1001
     }
 
-    // 临时简化 - 不使用Room
-    private val database: AppDatabase by lazy {
-        object : AppDatabase() {
-            override fun trackPointDao(): TrackPointDao {
-                return object : TrackPointDao {
-                    // 空实现
-                }
-            }
-        }
+    private val database by lazy {
+        Room.databaseBuilder(
+            this,
+            AppDatabase::class.java,
+            "geo_survey_database"
+        )
+        .fallbackToDestructiveMigration()
+        .build()
     }
 
     val trackRepository by lazy {
-        TrackRepository(
+        TrackDataRepository(
             trackPointDao = database.trackPointDao()
         )
     }
