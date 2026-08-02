@@ -17,8 +17,8 @@ import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import com.geosurvey.android.GeoSurveyApplication
+import com.geosurvey.android.data.model.TrackPoint
 import com.geosurvey.android.domain.service.TrackingService
-import com.geosurvey.android.presentation.viewmodel.TrackPoint
 import com.geosurvey.android.presentation.viewmodel.TrackViewModel
 import java.text.SimpleDateFormat
 import java.util.*
@@ -137,7 +137,7 @@ fun TrackScreen() {
         }
 
         Text(
-            text = "📋 轨迹点列表 (最新50个)",
+            text = "📋 轨迹点列表",
             fontSize = 16.sp,
             fontWeight = FontWeight.SemiBold,
             color = Color(0xFF0F172A)
@@ -161,7 +161,7 @@ fun TrackScreen() {
                 modifier = Modifier.fillMaxSize(),
                 verticalArrangement = Arrangement.spacedBy(4.dp)
             ) {
-                items(trackPoints.take(50)) { point ->
+                items(trackPoints) { point ->
                     TrackPointItem(point)
                 }
             }
