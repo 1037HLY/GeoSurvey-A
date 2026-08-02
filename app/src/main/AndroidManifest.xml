@@ -30,6 +30,13 @@
             </intent-filter>
         </activity>
 
+        <!-- 后台追踪服务 -->
+        <service
+            android:name=".domain.service.TrackingService"
+            android:enabled="true"
+            android:exported="false"
+            android:foregroundServiceType="location" />
+
     </application>
 
 </manifest>
