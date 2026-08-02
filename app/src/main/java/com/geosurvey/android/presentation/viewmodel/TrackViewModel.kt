@@ -46,10 +46,18 @@ class TrackViewModel(
     private val _pointCount = MutableStateFlow(0)
     val pointCount: StateFlow<Int> = _pointCount.asStateFlow()
 
+    private val _availableDates = MutableStateFlow<List<String>>(emptyList())
+    val availableDates: StateFlow<List<String>> = _availableDates.asStateFlow()
+
+    private val _selectedDate = MutableStateFlow<String?>(null)
+    val selectedDate: StateFlow<String?> = _selectedDate.asStateFlow()
+
+    private val _filteredPoints = MutableStateFlow<List<TrackPoint>>(emptyList())
+    val filteredPoints: StateFlow<List<TrackPoint>> = _filteredPoints.asStateFlow()
+
     private var lastLocation: Location? = null
     private var isReceiverRegistered = false
 
-    // 广播接收器
     private val locationReceiver = object : BroadcastReceiver() {
         override fun onReceive(context: Context, intent: Intent) {
             val lat = intent.getDoubleExtra("latitude", 0.0)
@@ -75,6 +83,7 @@ class TrackViewModel(
 
     init {
         loadTrackPoints()
+        loadAvailableDates()
         registerReceiver()
     }
 
@@ -102,12 +111,10 @@ class TrackViewModel(
     fun addTrackPoint(location: Location) {
         if (!_isRecording.value) return
 
-        // 精度过滤
         if (location.accuracy != null && location.accuracy > MIN_ACCURACY) {
             return
         }
 
-        // 距离过滤（防止静止时产生多个点）
         if (lastLocation != null) {
             val distance = lastLocation!!.distanceTo(location)
             if (distance < MIN_DISTANCE) {
@@ -115,7 +122,6 @@ class TrackViewModel(
             }
         }
 
-        // ⭐ 保存到数据库
         viewModelScope.launch {
             val point = TrackPoint(
                 latitude = location.latitude,
@@ -129,6 +135,7 @@ class TrackViewModel(
             trackRepository.insertTrackPoint(point)
             lastLocation = location
             loadTrackPoints()
+            loadAvailableDates()
         }
     }
 
@@ -141,11 +148,56 @@ class TrackViewModel(
         }
     }
 
-    fun deleteAllTrackPoints() {
+    fun loadAvailableDates() {
         viewModelScope.launch {
+            trackRepository.getAvailableDates().collect { dates ->
+                _availableDates.value = dates
+            }
+        }
+    }
+
+    fun filterByDate(date: String) {
+        _selectedDate.value = date
+        viewModelScope.launch {
+            trackRepository.getTrackPointsByDate(date).collect { points ->
+                _filteredPoints.value = points
+            }
+        }
+    }
+
+    fun clearDateFilter() {
+        _selectedDate.value = null
+        _filteredPoints.value = emptyList()
+    }
+
+    suspend fun deleteTrackPointsByDate(date: String): Boolean {
+        return try {
+            trackRepository.deleteTrackPointsByDate(date)
+            loadTrackPoints()
+            loadAvailableDates()
+            if (_selectedDate.value == date) {
+                clearDateFilter()
+            }
+            true
+        } catch (e: Exception) {
+            false
+        }
+    }
+
+    suspend fun deleteAllTrackPoints(): Boolean {
+        return try {
             trackRepository.deleteAllTrackPoints()
             loadTrackPoints()
+            loadAvailableDates()
+            clearDateFilter()
+            true
+        } catch (e: Exception) {
+            false
         }
+    }
+
+    fun getDisplayPoints(): List<TrackPoint> {
+        return if (_selectedDate.value != null) _filteredPoints.value else _trackPoints.value
     }
 
     override fun onCleared() {
