@@ -76,72 +76,125 @@ fun AnalysisScreen(
 
         Spacer(modifier = Modifier.height(16.dp))
 
-        // 赤平投影卡片
-        Card(
-            modifier = Modifier
-                .fillMaxWidth()
-                .height(200.dp)
-                .clip(RoundedCornerShape(16.dp)),
-            colors = CardDefaults.cardColors(
-                containerColor = Color.White.copy(alpha = 0.7f)
-            ),
-            elevation = CardDefaults.cardElevation(defaultElevation = 4.dp)
+        // ========== 第一行：赤平投影 + 玫瑰花图 ==========
+        Row(
+            modifier = Modifier.fillMaxWidth(),
+            horizontalArrangement = Arrangement.spacedBy(12.dp)
         ) {
-            Row(
+            // 赤平投影卡片
+            Card(
                 modifier = Modifier
-                    .fillMaxSize()
-                    .padding(16.dp),
-                verticalAlignment = Alignment.CenterVertically
+                    .weight(1f)
+                    .height(180.dp)
+                    .clip(RoundedCornerShape(16.dp)),
+                colors = CardDefaults.cardColors(
+                    containerColor = Color.White.copy(alpha = 0.7f)
+                ),
+                elevation = CardDefaults.cardElevation(defaultElevation = 4.dp)
             ) {
-                Text(
-                    text = "📐",
-                    fontSize = 48.sp,
-                    modifier = Modifier.width(80.dp)
-                )
                 Column(
-                    modifier = Modifier.weight(1f)
+                    modifier = Modifier
+                        .fillMaxSize()
+                        .padding(12.dp),
+                    horizontalAlignment = Alignment.CenterHorizontally,
+                    verticalArrangement = Arrangement.Center
                 ) {
                     Text(
-                        text = "赤平投影图",
-                        fontSize = 18.sp,
+                        text = "📐",
+                        fontSize = 36.sp
+                    )
+                    Spacer(modifier = Modifier.height(4.dp))
+                    Text(
+                        text = "赤平投影",
+                        fontSize = 14.sp,
                         fontWeight = FontWeight.SemiBold,
                         color = Color(0xFF0F172A)
                     )
                     Text(
-                        text = "极射赤平投影分析",
-                        fontSize = 13.sp,
+                        text = "${records.size} 条数据",
+                        fontSize = 11.sp,
                         color = Color(0xFF475569)
                     )
-                    Text(
-                        text = if (records.isNotEmpty()) "${records.size} 条数据可用" else "暂无数据",
-                        fontSize = 12.sp,
-                        color = if (records.isNotEmpty()) Color(0xFF10B981) else Color(0xFFF59E0B)
-                    )
+                    Spacer(modifier = Modifier.height(8.dp))
+                    Button(
+                        onClick = {
+                            if (records.isNotEmpty()) {
+                                navController.navigate("stereographic")
+                            }
+                        },
+                        enabled = records.isNotEmpty(),
+                        colors = ButtonDefaults.buttonColors(
+                            containerColor = Color(0xFF0EA5E9)
+                        ),
+                        shape = RoundedCornerShape(8.dp),
+                        modifier = Modifier.fillMaxWidth()
+                    ) {
+                        Text(if (records.isNotEmpty()) "查看" else "无数据", fontSize = 12.sp)
+                    }
                 }
-                Button(
-                    onClick = {
-                        if (records.isNotEmpty()) {
-                            navController.navigate("stereographic")
-                        }
-                    },
-                    enabled = records.isNotEmpty(),
-                    colors = ButtonDefaults.buttonColors(
-                        containerColor = Color(0xFF0EA5E9)
-                    ),
-                    shape = RoundedCornerShape(8.dp)
+            }
+
+            // 玫瑰花图卡片
+            Card(
+                modifier = Modifier
+                    .weight(1f)
+                    .height(180.dp)
+                    .clip(RoundedCornerShape(16.dp)),
+                colors = CardDefaults.cardColors(
+                    containerColor = Color.White.copy(alpha = 0.7f)
+                ),
+                elevation = CardDefaults.cardElevation(defaultElevation = 4.dp)
+            ) {
+                Column(
+                    modifier = Modifier
+                        .fillMaxSize()
+                        .padding(12.dp),
+                    horizontalAlignment = Alignment.CenterHorizontally,
+                    verticalArrangement = Arrangement.Center
                 ) {
-                    Text(if (records.isNotEmpty()) "查看" else "无数据")
+                    Text(
+                        text = "🌹",
+                        fontSize = 36.sp
+                    )
+                    Spacer(modifier = Modifier.height(4.dp))
+                    Text(
+                        text = "玫瑰花图",
+                        fontSize = 14.sp,
+                        fontWeight = FontWeight.SemiBold,
+                        color = Color(0xFF0F172A)
+                    )
+                    Text(
+                        text = "${records.size} 条数据",
+                        fontSize = 11.sp,
+                        color = Color(0xFF475569)
+                    )
+                    Spacer(modifier = Modifier.height(8.dp))
+                    Button(
+                        onClick = {
+                            if (records.isNotEmpty()) {
+                                navController.navigate("rose")
+                            }
+                        },
+                        enabled = records.isNotEmpty(),
+                        colors = ButtonDefaults.buttonColors(
+                            containerColor = Color(0xFF8B5CF6)
+                        ),
+                        shape = RoundedCornerShape(8.dp),
+                        modifier = Modifier.fillMaxWidth()
+                    ) {
+                        Text(if (records.isNotEmpty()) "查看" else "无数据", fontSize = 12.sp)
+                    }
                 }
             }
         }
 
         Spacer(modifier = Modifier.height(12.dp))
 
-        // 玫瑰花图卡片
+        // ========== 第二行：坐标转换 ==========
         Card(
             modifier = Modifier
                 .fillMaxWidth()
-                .height(200.dp)
+                .height(140.dp)
                 .clip(RoundedCornerShape(16.dp)),
             colors = CardDefaults.cardColors(
                 containerColor = Color.White.copy(alpha = 0.7f)
@@ -155,50 +208,45 @@ fun AnalysisScreen(
                 verticalAlignment = Alignment.CenterVertically
             ) {
                 Text(
-                    text = "🌹",
-                    fontSize = 48.sp,
-                    modifier = Modifier.width(80.dp)
+                    text = "🌐",
+                    fontSize = 40.sp,
+                    modifier = Modifier.width(60.dp)
                 )
                 Column(
                     modifier = Modifier.weight(1f)
                 ) {
                     Text(
-                        text = "走向玫瑰花图",
+                        text = "坐标转换",
                         fontSize = 18.sp,
                         fontWeight = FontWeight.SemiBold,
                         color = Color(0xFF0F172A)
                     )
                     Text(
-                        text = "走向方向分布统计",
+                        text = "WGS84 / CGCS2000 / 高斯投影",
                         fontSize = 13.sp,
                         color = Color(0xFF475569)
                     )
                     Text(
-                        text = if (records.isNotEmpty()) "${records.size} 条数据可用" else "暂无数据",
+                        text = "经纬度 ↔ 平面坐标互转",
                         fontSize = 12.sp,
-                        color = if (records.isNotEmpty()) Color(0xFF10B981) else Color(0xFFF59E0B)
+                        color = Color(0xFF6B7280)
                     )
                 }
                 Button(
-                    onClick = {
-                        if (records.isNotEmpty()) {
-                            navController.navigate("rose")
-                        }
-                    },
-                    enabled = records.isNotEmpty(),
+                    onClick = { navController.navigate("coordinate") },
                     colors = ButtonDefaults.buttonColors(
-                        containerColor = Color(0xFF8B5CF6)
+                        containerColor = Color(0xFF0EA5E9)
                     ),
                     shape = RoundedCornerShape(8.dp)
                 ) {
-                    Text(if (records.isNotEmpty()) "查看" else "无数据")
+                    Text("进入")
                 }
             }
         }
 
-        Spacer(modifier = Modifier.height(16.dp))
+        Spacer(modifier = Modifier.height(12.dp))
 
-        // 使用说明
+        // ========== 第三行：使用说明 ==========
         Card(
             modifier = Modifier.fillMaxWidth(),
             colors = CardDefaults.cardColors(
@@ -217,7 +265,7 @@ fun AnalysisScreen(
                 )
                 Spacer(modifier = Modifier.height(4.dp))
                 Text(
-                    text = "1. 在「产状」页面测量并记录产状数据\n2. 返回此页面选择分析工具查看可视化结果",
+                    text = "1. 在「产状」页面测量并记录产状数据\n2. 选择「赤平投影」或「玫瑰花图」查看分析\n3. 选择「坐标转换」进行坐标系转换",
                     fontSize = 12.sp,
                     color = Color(0xFF475569),
                     lineHeight = 18.sp
