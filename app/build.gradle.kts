@@ -82,10 +82,10 @@ dependencies {
     // Navigation
     implementation("androidx.navigation:navigation-compose:2.7.6")
     
-    // ⭐ 暂时注释掉Room - 解决Kapt缓存问题
-    // implementation("androidx.room:room-runtime:2.6.1")
-    // implementation("androidx.room:room-ktx:2.6.1")
-    // kapt("androidx.room:room-compiler:2.6.1")
+    // ⭐ Room Database
+    implementation("androidx.room:room-runtime:2.6.1")
+    implementation("androidx.room:room-ktx:2.6.1")
+    kapt("androidx.room:room-compiler:2.6.1")
     
     // Coroutines
     implementation("org.jetbrains.kotlinx:kotlinx-coroutines-android:1.7.3")
