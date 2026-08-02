@@ -141,6 +141,86 @@ fun CoordinateScreen() {
                         color = Color(0xFF0F172A)
                     )
                 }
+
+                // ========== 自定义参数设置 ==========
+                Spacer(modifier = Modifier.height(8.dp))
+
+                Row(
+                    modifier = Modifier.fillMaxWidth(),
+                    verticalAlignment = Alignment.CenterVertically
+                ) {
+                    Switch(
+                        checked = state.useCustomProjection,
+                        onCheckedChange = { viewModel.toggleUseCustomProjection() },
+                        colors = SwitchDefaults.colors(
+                            checkedThumbColor = PrimaryBlue,
+                            checkedTrackColor = PrimaryBlue.copy(alpha = 0.5f)
+                        )
+                    )
+                    Text(
+                        text = if (state.useCustomProjection) "🔧 自定义参数" else "⚡ 自动计算",
+                        fontSize = 13.sp,
+                        color = if (state.useCustomProjection) PrimaryBlue else Color(0xFF475569)
+                    )
+                }
+
+                if (state.useCustomProjection) {
+                    Spacer(modifier = Modifier.height(4.dp))
+                    Row(
+                        modifier = Modifier.fillMaxWidth(),
+                        horizontalArrangement = Arrangement.spacedBy(8.dp)
+                    ) {
+                        OutlinedTextField(
+                            value = state.customZone,
+                            onValueChange = { viewModel.updateCustomZone(it) },
+                            label = { Text("带号") },
+                            modifier = Modifier.weight(1f),
+                            shape = RoundedCornerShape(8.dp),
+                            singleLine = true,
+                            placeholder = { Text("例如: 18", fontSize = 12.sp) }
+                        )
+                        OutlinedTextField(
+                            value = state.customCentralMeridian,
+                            onValueChange = { viewModel.updateCustomCentralMeridian(it) },
+                            label = { Text("中央子午线 (°)") },
+                            modifier = Modifier.weight(1f),
+                            shape = RoundedCornerShape(8.dp),
+                            singleLine = true,
+                            placeholder = { Text("例如: 105", fontSize = 12.sp) }
+                        )
+                    }
+
+                    Row(
+                        modifier = Modifier.fillMaxWidth(),
+                        horizontalArrangement = Arrangement.spacedBy(8.dp)
+                    ) {
+                        Button(
+                            onClick = { viewModel.calculateWithCustomParams() },
+                            modifier = Modifier.weight(1f),
+                            colors = ButtonDefaults.buttonColors(
+                                containerColor = PrimaryBlue
+                            ),
+                            shape = RoundedCornerShape(8.dp)
+                        ) {
+                            Text("🔄 应用")
+                        }
+                        Button(
+                            onClick = {
+                                viewModel.updateCustomZone("")
+                                viewModel.updateCustomCentralMeridian("")
+                                viewModel.toggleUseCustomProjection()
+                                viewModel.toggleUseCustomProjection()
+                            },
+                            modifier = Modifier.weight(1f),
+                            colors = ButtonDefaults.buttonColors(
+                                containerColor = Color(0xFF94A3B8)
+                            ),
+                            shape = RoundedCornerShape(8.dp)
+                        ) {
+                            Text("重置")
+                        }
+                    }
+                }
             } else {
                 Text(
                     text = "等待定位...",
