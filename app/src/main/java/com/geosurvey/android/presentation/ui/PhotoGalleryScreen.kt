@@ -2,10 +2,10 @@ package com.geosurvey.android.presentation.ui
 
 import android.graphics.BitmapFactory
 import androidx.compose.foundation.Image
+import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.*
-import androidx.compose.foundation.lazy.GridCells
-import androidx.compose.foundation.lazy.LazyVerticalGrid
+import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material3.*
@@ -88,14 +88,38 @@ fun PhotoGalleryScreen() {
                 }
             }
         } else {
-            LazyVerticalGrid(
-                columns = GridCells.Fixed(3),
-                horizontalArrangement = Arrangement.spacedBy(4.dp),
-                verticalArrangement = Arrangement.spacedBy(4.dp),
-                modifier = Modifier.fillMaxSize()
+            // 使用 LazyColumn 实现网格布局
+            LazyColumn(
+                modifier = Modifier.fillMaxSize(),
+                verticalArrangement = Arrangement.spacedBy(4.dp)
             ) {
-                items(photos) { photo ->
-                    PhotoGridItem(photo = photo)
+                // 每行3张图片
+                val chunked = photos.chunked(3)
+                items(chunked) { rowPhotos ->
+                    Row(
+                        modifier = Modifier.fillMaxWidth(),
+                        horizontalArrangement = Arrangement.spacedBy(4.dp)
+                    ) {
+                        rowPhotos.forEach { photo ->
+                            Box(
+                                modifier = Modifier
+                                    .weight(1f)
+                                    .aspectRatio(1f)
+                                    .clip(RoundedCornerShape(8.dp))
+                                    .background(Color(0xFFF1F5F9))
+                            ) {
+                                PhotoGridItem(photo = photo)
+                            }
+                        }
+                        // 补齐空位
+                        repeat(3 - rowPhotos.size) {
+                            Box(
+                                modifier = Modifier
+                                    .weight(1f)
+                                    .aspectRatio(1f)
+                            )
+                        }
+                    }
                 }
             }
         }
@@ -136,16 +160,11 @@ fun PhotoGridItem(photo: WatermarkPhoto) {
         }
     }
 
-    Card(
+    Box(
         modifier = Modifier
-            .aspectRatio(1f)
-            .clip(RoundedCornerShape(8.dp))
-            .clickable {
-                // 可以查看大图
-            },
-        colors = CardDefaults.cardColors(
-            containerColor = Color(0xFFF1F5F9)
-        )
+            .fillMaxSize()
+            .clip(RoundedCornerShape(8.dp)),
+        contentAlignment = Alignment.Center
     ) {
         if (bitmap != null) {
             Image(
@@ -155,15 +174,10 @@ fun PhotoGridItem(photo: WatermarkPhoto) {
                 contentScale = ContentScale.Crop
             )
         } else {
-            Box(
-                modifier = Modifier.fillMaxSize(),
-                contentAlignment = Alignment.Center
-            ) {
-                Text(
-                    text = "📷",
-                    fontSize = 24.sp
-                )
-            }
+            Text(
+                text = "📷",
+                fontSize = 24.sp
+            )
         }
     }
 }
