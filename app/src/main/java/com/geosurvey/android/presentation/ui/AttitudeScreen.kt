@@ -2,6 +2,8 @@ package com.geosurvey.android.presentation.ui
 
 import android.Manifest
 import android.content.pm.PackageManager
+import android.location.Location
+import android.os.Looper
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
@@ -16,9 +18,16 @@ import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
+import androidx.core.app.ActivityCompat
 import androidx.core.content.ContextCompat
 import com.geosurvey.android.GeoSurveyApplication
 import com.geosurvey.android.presentation.viewmodel.AttitudeViewModel
+import com.google.android.gms.location.FusedLocationProviderClient
+import com.google.android.gms.location.LocationCallback
+import com.google.android.gms.location.LocationRequest
+import com.google.android.gms.location.LocationResult
+import com.google.android.gms.location.LocationServices
+import com.google.android.gms.location.Priority
 import kotlinx.coroutines.launch
 import java.text.SimpleDateFormat
 import java.util.*
@@ -31,10 +40,28 @@ fun AttitudeScreen() {
     val state by viewModel.state.collectAsState()
     val coroutineScope = rememberCoroutineScope()
 
+    // 定位客户端
+    val fusedLocationClient = remember { LocationServices.getFusedLocationProviderClient(context) }
+    var location by remember { mutableStateOf<Location?>(null) }
+
     var noteText by remember { mutableStateOf("") }
     var showRecorded by remember { mutableStateOf(false) }
+    var showToast by remember { mutableStateOf(false) }
+    var toastMessage by remember { mutableStateOf("") }
 
-    // 检查定位权限
+    // 位置回调
+    val locationCallback = remember {
+        object : LocationCallback() {
+            override fun onLocationResult(result: LocationResult) {
+                result.lastLocation?.let {
+                    location = it
+                    viewModel.updateLocation(it)
+                }
+            }
+        }
+    }
+
+    // 检查并请求权限，启动定位
     LaunchedEffect(Unit) {
         val fine = ContextCompat.checkSelfPermission(
             context, Manifest.permission.ACCESS_FINE_LOCATION
@@ -42,11 +69,44 @@ fun AttitudeScreen() {
         val coarse = ContextCompat.checkSelfPermission(
             context, Manifest.permission.ACCESS_COARSE_LOCATION
         )
+
         if (fine == PackageManager.PERMISSION_GRANTED &&
             coarse == PackageManager.PERMISSION_GRANTED
         ) {
-            // 位置权限已授予
+            startLocationUpdates(fusedLocationClient, locationCallback)
         }
+    }
+
+    // 组件销毁时清理
+    DisposableEffect(Unit) {
+        onDispose {
+            try {
+                fusedLocationClient.removeLocationUpdates(locationCallback)
+            } catch (e: Exception) {
+                // ignore
+            }
+        }
+    }
+
+    // 记录按钮点击处理
+    fun handleSaveRecord() {
+        if (!state.isMeasuring) {
+            toastMessage = "请先点击「开始测量」"
+            showToast = true
+            return
+        }
+
+        if (location == null) {
+            toastMessage = "正在获取定位，请稍后..."
+            showToast = true
+            return
+        }
+
+        viewModel.saveRecord(noteText)
+        noteText = ""
+        showRecorded = true
+        toastMessage = "✅ 产状记录已保存！"
+        showToast = true
     }
 
     Column(
@@ -132,23 +192,22 @@ fun AttitudeScreen() {
 
                 Spacer(modifier = Modifier.height(12.dp))
 
-                val location = state.currentLocation
                 if (location != null) {
                     Text(
-                        text = "📍 ${String.format("%.6f", location.latitude)}, ${String.format("%.6f", location.longitude)}",
+                        text = "📍 ${String.format("%.6f", location!!.latitude)}, ${String.format("%.6f", location!!.longitude)}",
                         fontSize = 12.sp,
                         color = Color(0xFF475569)
                     )
                     Text(
-                        text = "海拔: ${location.altitude?.let { String.format("%.1f", it) } ?: "--"}m | 精度: ±${location.accuracy?.let { String.format("%.1f", it) } ?: "--"}m",
+                        text = "海拔: ${location!!.altitude?.let { String.format("%.1f", it) } ?: "--"}m | 精度: ±${location!!.accuracy?.let { String.format("%.1f", it) } ?: "--"}m",
                         fontSize = 12.sp,
                         color = Color(0xFF475569)
                     )
                 } else {
                     Text(
-                        text = "等待定位...",
+                        text = "⏳ 正在获取定位...",
                         fontSize = 12.sp,
-                        color = Color(0xFF94A3B8)
+                        color = Color(0xFFF59E0B)
                     )
                 }
             }
@@ -179,17 +238,13 @@ fun AttitudeScreen() {
             }
 
             Button(
-                onClick = {
-                    viewModel.saveRecord(noteText)
-                    noteText = ""
-                    showRecorded = true
-                },
+                onClick = { handleSaveRecord() },
                 modifier = Modifier.weight(1f),
                 colors = ButtonDefaults.buttonColors(
                     containerColor = Color(0xFF10B981)
                 ),
                 shape = RoundedCornerShape(12.dp),
-                enabled = state.isMeasuring && state.currentLocation != null
+                enabled = state.isMeasuring
             ) {
                 Text("📝 记录")
             }
@@ -289,18 +344,54 @@ fun AttitudeScreen() {
         }
     }
 
+    // Toast提示
+    if (showToast) {
+        LaunchedEffect(Unit) {
+            kotlinx.coroutines.delay(2500)
+            showToast = false
+        }
+        Snackbar(
+            modifier = Modifier.padding(16.dp),
+            containerColor = when {
+                toastMessage.contains("✅") -> Color(0xFF10B981)
+                toastMessage.contains("请先") || toastMessage.contains("正在") -> Color(0xFFF59E0B)
+                else -> Color(0xFFEF4444)
+            }
+        ) {
+            Text(toastMessage, color = Color.White)
+        }
+    }
+
     // 记录成功提示
     if (showRecorded) {
         LaunchedEffect(Unit) {
             kotlinx.coroutines.delay(2000)
             showRecorded = false
         }
-        Snackbar(
-            modifier = Modifier.padding(16.dp),
-            containerColor = Color(0xFF10B981)
-        ) {
-            Text("✅ 产状记录已保存！")
-        }
+        // 已通过上面的Snackbar显示
+    }
+}
+
+// 启动定位更新函数
+fun startLocationUpdates(
+    fusedLocationClient: FusedLocationProviderClient,
+    locationCallback: LocationCallback
+) {
+    try {
+        val locationRequest = LocationRequest.Builder(
+            Priority.PRIORITY_HIGH_ACCURACY, 2000
+        ).apply {
+            setMinUpdateIntervalMillis(1000)
+            setMaxUpdateDelayMillis(5000)
+        }.build()
+
+        fusedLocationClient.requestLocationUpdates(
+            locationRequest,
+            locationCallback,
+            Looper.getMainLooper()
+        )
+    } catch (e: Exception) {
+        e.printStackTrace()
     }
 }
 
