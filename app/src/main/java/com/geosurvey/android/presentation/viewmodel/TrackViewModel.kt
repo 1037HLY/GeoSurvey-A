@@ -7,20 +7,14 @@ import android.content.Intent
 import android.content.IntentFilter
 import android.location.Location
 import androidx.lifecycle.AndroidViewModel
+import androidx.lifecycle.viewModelScope
 import com.geosurvey.android.GeoSurveyApplication
+import com.geosurvey.android.data.model.TrackPoint
+import com.geosurvey.android.data.repository.TrackRepository
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
-
-data class TrackPoint(
-    val latitude: Double,
-    val longitude: Double,
-    val altitude: Double? = null,
-    val speed: Float? = null,
-    val bearing: Float? = null,
-    val accuracy: Float? = null,
-    val timestamp: Long = System.currentTimeMillis()
-)
+import kotlinx.coroutines.launch
 
 class TrackViewModel(
     application: Application
@@ -40,19 +34,22 @@ class TrackViewModel(
         private const val MIN_DISTANCE = 2.0
     }
 
-    // 使用内存存储轨迹点
+    private val trackRepository: TrackRepository =
+        (application as GeoSurveyApplication).trackRepository
+
+    private val _isRecording = MutableStateFlow(false)
+    val isRecording: StateFlow<Boolean> = _isRecording.asStateFlow()
+
     private val _trackPoints = MutableStateFlow<List<TrackPoint>>(emptyList())
     val trackPoints: StateFlow<List<TrackPoint>> = _trackPoints.asStateFlow()
 
     private val _pointCount = MutableStateFlow(0)
     val pointCount: StateFlow<Int> = _pointCount.asStateFlow()
 
-    private val _isRecording = MutableStateFlow(false)
-    val isRecording: StateFlow<Boolean> = _isRecording.asStateFlow()
-
     private var lastLocation: Location? = null
     private var isReceiverRegistered = false
 
+    // 广播接收器
     private val locationReceiver = object : BroadcastReceiver() {
         override fun onReceive(context: Context, intent: Intent) {
             val lat = intent.getDoubleExtra("latitude", 0.0)
@@ -77,6 +74,7 @@ class TrackViewModel(
     }
 
     init {
+        loadTrackPoints()
         registerReceiver()
     }
 
@@ -104,10 +102,12 @@ class TrackViewModel(
     fun addTrackPoint(location: Location) {
         if (!_isRecording.value) return
 
+        // 精度过滤
         if (location.accuracy != null && location.accuracy > MIN_ACCURACY) {
             return
         }
 
+        // 距离过滤（防止静止时产生多个点）
         if (lastLocation != null) {
             val distance = lastLocation!!.distanceTo(location)
             if (distance < MIN_DISTANCE) {
@@ -115,26 +115,37 @@ class TrackViewModel(
             }
         }
 
-        val point = TrackPoint(
-            latitude = location.latitude,
-            longitude = location.longitude,
-            altitude = location.altitude,
-            speed = location.speed,
-            bearing = location.bearing,
-            accuracy = location.accuracy,
-            timestamp = System.currentTimeMillis()
-        )
+        // ⭐ 保存到数据库
+        viewModelScope.launch {
+            val point = TrackPoint(
+                latitude = location.latitude,
+                longitude = location.longitude,
+                altitude = location.altitude,
+                speed = location.speed,
+                bearing = location.bearing,
+                accuracy = location.accuracy,
+                timestamp = System.currentTimeMillis()
+            )
+            trackRepository.insertTrackPoint(point)
+            lastLocation = location
+            loadTrackPoints()
+        }
+    }
 
-        val currentPoints = _trackPoints.value.toMutableList()
-        currentPoints.add(point)
-        _trackPoints.value = currentPoints
-        _pointCount.value = currentPoints.size
-        lastLocation = location
+    fun loadTrackPoints() {
+        viewModelScope.launch {
+            trackRepository.getAllTrackPoints().collect { points ->
+                _trackPoints.value = points
+                _pointCount.value = points.size
+            }
+        }
     }
 
     fun deleteAllTrackPoints() {
-        _trackPoints.value = emptyList()
-        _pointCount.value = 0
+        viewModelScope.launch {
+            trackRepository.deleteAllTrackPoints()
+            loadTrackPoints()
+        }
     }
 
     override fun onCleared() {
