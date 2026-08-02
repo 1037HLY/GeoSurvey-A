@@ -4,9 +4,6 @@ import android.app.Application
 import android.app.NotificationChannel
 import android.app.NotificationManager
 import android.os.Build
-import androidx.room.Room
-import com.geosurvey.android.data.database.AppDatabase
-import com.geosurvey.android.data.repository.TrackDataRepository
 
 class GeoSurveyApplication : Application() {
 
@@ -17,22 +14,6 @@ class GeoSurveyApplication : Application() {
         const val NOTIFICATION_CHANNEL_ID = "geo_survey_channel"
         const val NOTIFICATION_CHANNEL_NAME = "地质勘查工具箱"
         const val NOTIFICATION_ID = 1001
-    }
-
-    private val database by lazy {
-        Room.databaseBuilder(
-            this,
-            AppDatabase::class.java,
-            "geo_survey_database"
-        )
-        .fallbackToDestructiveMigration()
-        .build()
-    }
-
-    val trackRepository by lazy {
-        TrackDataRepository(
-            trackPointDao = database.trackPointDao()
-        )
     }
 
     override fun onCreate() {
