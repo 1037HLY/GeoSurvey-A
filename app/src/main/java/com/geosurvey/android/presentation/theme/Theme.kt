@@ -7,8 +7,13 @@ import androidx.compose.ui.graphics.Color
 
 private val LightColorScheme = lightColorScheme(
     primary = Color(0xFF0EA5E9),
+    secondary = Color(0xFF10B981),
+    tertiary = Color(0xFF8B5CF6),
     surface = Color(0xFFF8FAFC),
-    onSurface = Color(0xFF0F172A)
+    surfaceVariant = Color(0xFFF1F5F9),
+    onSurface = Color(0xFF0F172A),
+    background = Color(0xFFF8FAFC),
+    onBackground = Color(0xFF0F172A)
 )
 
 @Composable
