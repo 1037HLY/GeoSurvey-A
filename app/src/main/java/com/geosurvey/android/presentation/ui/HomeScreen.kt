@@ -1,7 +1,6 @@
 package com.geosurvey.android.presentation.ui
 
 import android.Manifest
-import android.content.Context
 import android.content.pm.PackageManager
 import androidx.activity.compose.rememberLauncherForActivityResult
 import androidx.activity.result.contract.ActivityResultContracts
@@ -29,11 +28,13 @@ fun HomeScreen() {
     val context = LocalContext.current
     val application = context.applicationContext as GeoSurveyApplication
 
-    // ⭐ 直接使用 viewModel()，不需要 Factory
     val locationViewModel: LocationViewModel = viewModel()
-
-    // 使用单例获取TrackViewModel
     val trackViewModel = remember { TrackViewModel.getInstance(application) }
+
+    // ⭐ 初始化LocationViewModel
+    LaunchedEffect(Unit) {
+        locationViewModel.init(context)
+    }
 
     val state by locationViewModel.state.collectAsState()
     val isRecording by trackViewModel.isRecording.collectAsState()
@@ -60,7 +61,7 @@ fun HomeScreen() {
         if (fine == PackageManager.PERMISSION_GRANTED &&
             coarse == PackageManager.PERMISSION_GRANTED
         ) {
-            locationViewModel.startLocation()
+            // 权限已授予，自动启动定位
         } else {
             permissionLauncher.launch(
                 arrayOf(
@@ -88,7 +89,6 @@ fun HomeScreen() {
         horizontalAlignment = Alignment.CenterHorizontally,
         verticalArrangement = Arrangement.Top
     ) {
-        // 标题
         Text(
             text = "🏔️ 地质勘查工具箱",
             fontSize = 28.sp,
@@ -107,17 +107,14 @@ fun HomeScreen() {
 
         Spacer(modifier = Modifier.height(24.dp))
 
-        // 定位信息卡片
         LocationInfoCard(state)
 
         Spacer(modifier = Modifier.height(16.dp))
 
-        // 卫星状态卡片
         SatelliteStatusCard(state)
 
         Spacer(modifier = Modifier.height(16.dp))
 
-        // 轨迹记录状态指示
         Card(
             modifier = Modifier.fillMaxWidth(),
             colors = CardDefaults.cardColors(
@@ -145,7 +142,6 @@ fun HomeScreen() {
 
         Spacer(modifier = Modifier.height(16.dp))
 
-        // 操作按钮
         Row(
             modifier = Modifier.fillMaxWidth(),
             horizontalArrangement = Arrangement.spacedBy(12.dp)
