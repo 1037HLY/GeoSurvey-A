@@ -15,9 +15,11 @@ import androidx.navigation.compose.NavHost
 import androidx.navigation.compose.composable
 import androidx.navigation.compose.rememberNavController
 import com.geosurvey.android.presentation.theme.GeoSurveyTheme
-import com.geosurvey.android.presentation.ui.AttitudeScreen
-import com.geosurvey.android.presentation.ui.HomeScreen
-import com.geosurvey.android.presentation.ui.TrackScreen
+import com.geosurvey.android.presentation.ui.*
+import com.geosurvey.android.presentation.ui.analysis.RoseDiagramScreen
+import com.geosurvey.android.presentation.ui.analysis.StereographicScreen
+import com.geosurvey.android.presentation.viewmodel.AttitudeViewModel
+import com.geosurvey.android.presentation.viewmodel.TrackViewModel
 
 class MainActivity : ComponentActivity() {
     override fun onCreate(savedInstanceState: Bundle?) {
@@ -39,6 +41,10 @@ class MainActivity : ComponentActivity() {
 fun AppNavigation() {
     val navController = rememberNavController()
     var selectedTab by remember { mutableStateOf(0) }
+    val context = androidx.compose.ui.platform.LocalContext.current
+    val application = context.applicationContext as com.geosurvey.android.GeoSurveyApplication
+    val trackViewModel = remember { TrackViewModel.getInstance(application) }
+    val attitudeViewModel = remember { AttitudeViewModel.getInstance(application) }
 
     Scaffold(
         bottomBar = {
@@ -79,6 +85,17 @@ fun AppNavigation() {
                         }
                     }
                 )
+                NavigationBarItem(
+                    icon = { Text("📊", fontSize = 20.sp) },
+                    label = { Text("分析") },
+                    selected = selectedTab == 3,
+                    onClick = {
+                        selectedTab = 3
+                        navController.navigate("analysis") {
+                            popUpTo("analysis") { inclusive = true }
+                        }
+                    }
+                )
             }
         }
     ) { paddingValues ->
@@ -95,6 +112,23 @@ fun AppNavigation() {
             }
             composable("attitude") {
                 AttitudeScreen()
+            }
+            composable("analysis") {
+                AnalysisScreen(navController = navController)
+            }
+            composable("stereographic") {
+                val records = attitudeViewModel.state.value.records
+                StereographicScreen(
+                    records = records,
+                    onBack = { navController.popBackStack() }
+                )
+            }
+            composable("rose") {
+                val records = attitudeViewModel.state.value.records
+                RoseDiagramScreen(
+                    records = records,
+                    onBack = { navController.popBackStack() }
+                )
             }
         }
     }
