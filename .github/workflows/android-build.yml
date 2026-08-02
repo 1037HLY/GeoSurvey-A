@@ -28,16 +28,19 @@ jobs:
     - name: Grant execute permission for gradlew
       run: chmod +x gradlew
     
-    - name: Clean everything
+    - name: Force clean everything
       run: |
         ./gradlew clean
         rm -rf app/build
         rm -rf .gradle
         rm -rf ~/.gradle/caches/
         rm -rf ~/.gradle/wrapper/
-        rm -rf app/build/tmp/kapt3/
-        rm -rf app/build/generated/source/kapt/
-        rm -rf app/build/generated/source/kaptKotlin/
+        rm -rf app/build/tmp/
+        rm -rf app/build/generated/
+        rm -rf app/build/intermediates/
+        rm -rf app/build/outputs/
+        find . -name "*.class" -type f -delete
+        find . -name "*.dex" -type f -delete
     
     - name: Build Debug APK
       run: ./gradlew assembleDebug --no-build-cache --rerun-tasks
