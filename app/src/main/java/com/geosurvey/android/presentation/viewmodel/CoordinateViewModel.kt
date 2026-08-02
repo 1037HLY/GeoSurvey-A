@@ -27,7 +27,11 @@ data class CoordinateState(
     val inputLon: String = "",
     val inputAlt: String = "",
     val note: String = "",
-    val locationName: String = ""
+    val locationName: String = "",
+    // 自定义带号和中央子午线
+    val customZone: String = "",
+    val customCentralMeridian: String = "",
+    val useCustomProjection: Boolean = false
 )
 
 class CoordinateViewModel(
@@ -74,7 +78,7 @@ class CoordinateViewModel(
             location.longitude
         )
 
-        val gaussCoord = GaussProjection.blhToGauss(
+        val gaussCoord = calculateGaussProjection(
             location.latitude,
             location.longitude
         )
@@ -86,6 +90,35 @@ class CoordinateViewModel(
             gcj02 = gcj02,
             gaussCoord = gaussCoord
         )
+    }
+
+    private fun calculateGaussProjection(
+        lat: Double,
+        lon: Double,
+        customZone: Int? = null,
+        customCentralMeridian: Double? = null
+    ): GaussProjection.GaussCoord? {
+        return try {
+            if (_state.value.useCustomProjection) {
+                val zone = customZone ?: _state.value.customZone.toIntOrNull()
+                val cm = customCentralMeridian ?: _state.value.customCentralMeridian.toDoubleOrNull()
+
+                if (zone != null && cm != null) {
+                    GaussProjection.blhToGaussWithCustom(
+                        lat,
+                        lon,
+                        zone,
+                        cm
+                    )
+                } else {
+                    GaussProjection.blhToGauss(lat, lon)
+                }
+            } else {
+                GaussProjection.blhToGauss(lat, lon)
+            }
+        } catch (e: Exception) {
+            GaussProjection.blhToGauss(lat, lon)
+        }
     }
 
     fun convertInput(
@@ -127,7 +160,7 @@ class CoordinateViewModel(
                 wgs84.longitude
             )
 
-            val gaussCoord = GaussProjection.blhToGauss(
+            val gaussCoord = calculateGaussProjection(
                 wgs84.latitude,
                 wgs84.longitude
             )
@@ -140,6 +173,47 @@ class CoordinateViewModel(
             )
         } catch (e: Exception) {
             // 转换失败
+        }
+    }
+
+    fun calculateWithCustomParams() {
+        val state = _state.value
+        val wgs84 = state.wgs84 ?: return
+
+        try {
+            val zone = state.customZone.toIntOrNull()
+            val cm = state.customCentralMeridian.toDoubleOrNull()
+
+            if (zone != null && cm != null) {
+                val gaussCoord = GaussProjection.blhToGaussWithCustom(
+                    wgs84.latitude,
+                    wgs84.longitude,
+                    zone,
+                    cm
+                )
+                _state.value = state.copy(
+                    gaussCoord = gaussCoord,
+                    useCustomProjection = true
+                )
+            } else {
+                val gaussCoord = GaussProjection.blhToGauss(
+                    wgs84.latitude,
+                    wgs84.longitude
+                )
+                _state.value = state.copy(
+                    gaussCoord = gaussCoord,
+                    useCustomProjection = false
+                )
+            }
+        } catch (e: Exception) {
+            val gaussCoord = GaussProjection.blhToGauss(
+                wgs84.latitude,
+                wgs84.longitude
+            )
+            _state.value = state.copy(
+                gaussCoord = gaussCoord,
+                useCustomProjection = false
+            )
         }
     }
 
@@ -162,7 +236,6 @@ class CoordinateViewModel(
             )
             coordinateRepository.insertRecord(record)
             loadRecords()
-            // 清空输入
             _state.value = state.copy(
                 note = "",
                 locationName = "",
@@ -211,5 +284,32 @@ class CoordinateViewModel(
 
     fun updateLocationName(value: String) {
         _state.value = _state.value.copy(locationName = value)
+    }
+
+    // 自定义参数更新
+    fun updateCustomZone(value: String) {
+        _state.value = _state.value.copy(customZone = value)
+    }
+
+    fun updateCustomCentralMeridian(value: String) {
+        _state.value = _state.value.copy(customCentralMeridian = value)
+    }
+
+    fun toggleUseCustomProjection() {
+        _state.value = _state.value.copy(
+            useCustomProjection = !_state.value.useCustomProjection
+        )
+        if (_state.value.useCustomProjection) {
+            calculateWithCustomParams()
+        } else {
+            val wgs84 = _state.value.wgs84
+            if (wgs84 != null) {
+                val gaussCoord = GaussProjection.blhToGauss(
+                    wgs84.latitude,
+                    wgs84.longitude
+                )
+                _state.value = _state.value.copy(gaussCoord = gaussCoord)
+            }
+        }
     }
 }
