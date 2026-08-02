@@ -1,6 +1,7 @@
 package com.geosurvey.android.presentation.ui.analysis
 
 import androidx.compose.foundation.Canvas
+import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material3.*
@@ -10,14 +11,13 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.geometry.Offset
 import androidx.compose.ui.graphics.Color
-import androidx.compose.ui.graphics.drawscope.DrawScope
 import androidx.compose.ui.graphics.drawscope.Stroke
-import androidx.compose.ui.graphics.drawscope.translate
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import com.geosurvey.android.data.model.AttitudeRecord
 import com.geosurvey.android.utils.StereographicProjection
+import kotlin.math.*
 
 @Composable
 fun StereographicScreen(
@@ -114,7 +114,9 @@ fun StereographicScreen(
             elevation = CardDefaults.cardElevation(defaultElevation = 4.dp)
         ) {
             Box(
-                modifier = Modifier.fillMaxSize(),
+                modifier = Modifier
+                    .fillMaxSize()
+                    .background(Color(0xFFF8FAFC)),
                 contentAlignment = Alignment.Center
             ) {
                 Canvas(
@@ -154,8 +156,12 @@ fun StereographicScreen(
                     markers.forEachIndexed { index, (x, y) ->
                         val px = centerX + x * radius
                         val py = centerY + y * radius
-                        // 在Canvas上无法直接绘制文字，使用DrawScope的drawContext
-                        // 这里简化，只画点
+                        // 绘制方向标记点
+                        drawCircle(
+                            color = Color(0xFF0F172A),
+                            radius = 4f,
+                            center = Offset(px, py)
+                        )
                     }
 
                     // 绘制投影点
@@ -168,7 +174,6 @@ fun StereographicScreen(
                                 radius = 6f,
                                 center = Offset(px, py)
                             )
-                            // 绘制外圈
                             drawCircle(
                                 color = Color(0xFF0EA5E9).copy(alpha = 0.3f),
                                 radius = 10f,
@@ -178,10 +183,10 @@ fun StereographicScreen(
                         }
 
                         // 绘制优势方向标记
-                        val avgX = centerX + 0.7f * radius * kotlin.math.sin(
+                        val avgX = centerX + 0.7f * radius * sin(
                             Math.toRadians(statistics.avgDirection.toDouble())
                         ).toFloat()
-                        val avgY = centerY + 0.7f * radius * kotlin.math.cos(
+                        val avgY = centerY + 0.7f * radius * cos(
                             Math.toRadians(statistics.avgDirection.toDouble())
                         ).toFloat()
                         drawCircle(
@@ -247,10 +252,4 @@ fun StereographicScreen(
             )
         }
     }
-}
-
-// 扩展函数：在Canvas上绘制文字
-fun DrawScope.drawText(text: String, x: Float, y: Float, color: Color = Color.Black) {
-    // 使用drawContext.canvas.nativeCanvas绘制文字需要Android Canvas
-    // 这里简化，实际项目中可使用drawIntoCanvas
 }
