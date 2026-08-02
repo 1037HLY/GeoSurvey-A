@@ -20,16 +20,26 @@ import androidx.compose.ui.unit.sp
 import androidx.core.content.ContextCompat
 import androidx.lifecycle.viewmodel.compose.viewModel
 import androidx.lifecycle.ViewModelProvider
+import com.geosurvey.android.GeoSurveyApplication
 import com.geosurvey.android.presentation.viewmodel.LocationState
 import com.geosurvey.android.presentation.viewmodel.LocationViewModel
+import com.geosurvey.android.presentation.viewmodel.TrackViewModel
+import com.geosurvey.android.presentation.viewmodel.TrackViewModelFactory
 
 @Composable
 fun HomeScreen() {
     val context = LocalContext.current
-    val viewModel: LocationViewModel = viewModel(
+    val application = context.applicationContext as GeoSurveyApplication
+
+    val locationViewModel: LocationViewModel = viewModel(
         factory = LocationViewModelFactory(context)
     )
-    val state by viewModel.state.collectAsState()
+    val trackViewModel: TrackViewModel = viewModel(
+        factory = TrackViewModelFactory(application)
+    )
+
+    val state by locationViewModel.state.collectAsState()
+    val isRecording by trackViewModel.isRecording.collectAsState()
 
     // 权限请求
     val permissionLauncher = rememberLauncherForActivityResult(
@@ -38,7 +48,7 @@ fun HomeScreen() {
         val fineLocation = permissions[Manifest.permission.ACCESS_FINE_LOCATION] ?: false
         val coarseLocation = permissions[Manifest.permission.ACCESS_COARSE_LOCATION] ?: false
         if (fineLocation && coarseLocation) {
-            viewModel.startLocation()
+            locationViewModel.startLocation()
         }
     }
 
@@ -53,7 +63,7 @@ fun HomeScreen() {
         if (fine == PackageManager.PERMISSION_GRANTED &&
             coarse == PackageManager.PERMISSION_GRANTED
         ) {
-            viewModel.startLocation()
+            locationViewModel.startLocation()
         } else {
             permissionLauncher.launch(
                 arrayOf(
@@ -62,6 +72,16 @@ fun HomeScreen() {
                     Manifest.permission.ACCESS_BACKGROUND_LOCATION
                 )
             )
+        }
+    }
+
+    // ⭐ 监听位置更新，自动保存到轨迹
+    LaunchedEffect(state.location) {
+        state.location?.let { location ->
+            // 如果正在记录轨迹，自动保存
+            if (isRecording) {
+                trackViewModel.addTrackPoint(location)
+            }
         }
     }
 
@@ -101,13 +121,41 @@ fun HomeScreen() {
 
         Spacer(modifier = Modifier.height(16.dp))
 
+        // 轨迹记录状态指示
+        Card(
+            modifier = Modifier.fillMaxWidth(),
+            colors = CardDefaults.cardColors(
+                containerColor = if (isRecording)
+                    Color(0xFF10B981).copy(alpha = 0.15f)
+                else
+                    Color(0xFF94A3B8).copy(alpha = 0.15f)
+            ),
+            shape = RoundedCornerShape(12.dp)
+        ) {
+            Row(
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .padding(12.dp),
+                horizontalArrangement = Arrangement.Center
+            ) {
+                Text(
+                    text = if (isRecording) "🟢 轨迹记录中" else "⏸️ 轨迹未记录",
+                    fontSize = 14.sp,
+                    fontWeight = FontWeight.Medium,
+                    color = if (isRecording) Color(0xFF10B981) else Color(0xFF94A3B8)
+                )
+            }
+        }
+
+        Spacer(modifier = Modifier.height(16.dp))
+
         // 操作按钮
         Row(
             modifier = Modifier.fillMaxWidth(),
             horizontalArrangement = Arrangement.spacedBy(12.dp)
         ) {
             Button(
-                onClick = { viewModel.startLocation() },
+                onClick = { locationViewModel.startLocation() },
                 modifier = Modifier.weight(1f),
                 colors = ButtonDefaults.buttonColors(
                     containerColor = Color(0xFF0EA5E9)
@@ -118,7 +166,7 @@ fun HomeScreen() {
             }
 
             Button(
-                onClick = { viewModel.stopLocation() },
+                onClick = { locationViewModel.stopLocation() },
                 modifier = Modifier.weight(1f),
                 colors = ButtonDefaults.buttonColors(
                     containerColor = Color(0xFFEF4444)
