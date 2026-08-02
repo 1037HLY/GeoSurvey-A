@@ -21,6 +21,8 @@ import androidx.navigation.NavController
 import com.geosurvey.android.GeoSurveyApplication
 import com.geosurvey.android.data.model.TrackPoint
 import com.geosurvey.android.domain.service.TrackingService
+import com.geosurvey.android.presentation.theme.*
+import com.geosurvey.android.presentation.ui.components.GlassCard
 import com.geosurvey.android.presentation.viewmodel.TrackViewModel
 import com.geosurvey.android.utils.TrackExportHelper
 import kotlinx.coroutines.launch
@@ -44,12 +46,10 @@ fun TrackScreen(
     val selectedDate by viewModel.selectedDate.collectAsState()
     val filteredPoints by viewModel.filteredPoints.collectAsState()
 
-    var showDatePicker by remember { mutableStateOf(false) }
     var showExportDialog by remember { mutableStateOf(false) }
 
     val displayPoints = if (selectedDate != null) filteredPoints else trackPoints
 
-    // 导出功能
     fun exportTracks(format: String) {
         val helper = TrackExportHelper(context)
         val points = if (selectedDate != null) filteredPoints else trackPoints
@@ -73,7 +73,6 @@ fun TrackScreen(
         showExportDialog = false
     }
 
-    // 删除当天
     fun deleteSelectedDate() {
         selectedDate?.let { date ->
             coroutineScope.launch {
@@ -87,7 +86,7 @@ fun TrackScreen(
             .fillMaxSize()
             .padding(16.dp)
     ) {
-        // ⭐ 标题行 - 添加导航入口
+        // 标题行
         Row(
             modifier = Modifier.fillMaxWidth(),
             horizontalArrangement = Arrangement.SpaceBetween,
@@ -99,22 +98,15 @@ fun TrackScreen(
                 fontWeight = FontWeight.Bold,
                 color = Color(0xFF0F172A)
             )
-            // ⭐ 导航和导出按钮
             Row(
                 horizontalArrangement = Arrangement.spacedBy(4.dp)
             ) {
-                // 🧭 导航按钮 - 跳转到导航页面
                 if (trackPoints.isNotEmpty()) {
                     IconButton(
-                        onClick = {
-                            navController?.navigate("navigation")
-                        }
+                        onClick = { navController?.navigate("navigation") }
                     ) {
                         Text("🧭", fontSize = 20.sp)
                     }
-                }
-                // 📤 导出全部按钮
-                if (trackPoints.isNotEmpty()) {
                     IconButton(
                         onClick = { showExportDialog = true }
                     ) {
@@ -127,18 +119,11 @@ fun TrackScreen(
         Spacer(modifier = Modifier.height(12.dp))
 
         // 统计卡片
-        Card(
-            modifier = Modifier.fillMaxWidth(),
-            colors = CardDefaults.cardColors(
-                containerColor = Color.White.copy(alpha = 0.7f)
-            ),
-            shape = RoundedCornerShape(16.dp),
-            elevation = CardDefaults.cardElevation(defaultElevation = 4.dp)
+        GlassCard(
+            modifier = Modifier.fillMaxWidth()
         ) {
             Row(
-                modifier = Modifier
-                    .fillMaxWidth()
-                    .padding(12.dp),
+                modifier = Modifier.fillMaxWidth(),
                 horizontalArrangement = Arrangement.SpaceEvenly
             ) {
                 Column(horizontalAlignment = Alignment.CenterHorizontally) {
@@ -149,7 +134,7 @@ fun TrackScreen(
                     Text("状态", fontSize = 12.sp, color = Color(0xFF475569))
                     Text(
                         if (isRecording) "● 记录中" else "○ 已停止",
-                        color = if (isRecording) Color(0xFF10B981) else Color(0xFF94A3B8),
+                        color = if (isRecording) SecondaryGreen else Color(0xFF94A3B8),
                         fontSize = 14.sp,
                         fontWeight = FontWeight.SemiBold
                     )
@@ -163,7 +148,7 @@ fun TrackScreen(
 
         Spacer(modifier = Modifier.height(12.dp))
 
-        // 日期筛选行
+        // 日期筛选
         if (availableDates.isNotEmpty()) {
             var expanded by remember { mutableStateOf(false) }
 
@@ -221,7 +206,7 @@ fun TrackScreen(
                 },
                 modifier = Modifier.weight(1f),
                 colors = ButtonDefaults.buttonColors(
-                    containerColor = if (isRecording) Color(0xFF10B981) else Color(0xFF0EA5E9)
+                    containerColor = if (isRecording) SecondaryGreen else PrimaryBlue
                 ),
                 shape = RoundedCornerShape(12.dp)
             ) {
@@ -238,7 +223,7 @@ fun TrackScreen(
                 },
                 modifier = Modifier.weight(1f),
                 colors = ButtonDefaults.buttonColors(
-                    containerColor = if (isRecording) Color(0xFFEF4444) else Color(0xFF94A3B8)
+                    containerColor = if (isRecording) ErrorRed else Color(0xFF94A3B8)
                 ),
                 shape = RoundedCornerShape(12.dp),
                 enabled = isRecording
@@ -260,7 +245,7 @@ fun TrackScreen(
                         onClick = { deleteSelectedDate() },
                         modifier = Modifier.weight(1f),
                         colors = ButtonDefaults.buttonColors(
-                            containerColor = Color(0xFFEF4444).copy(alpha = 0.8f)
+                            containerColor = ErrorRed.copy(alpha = 0.8f)
                         ),
                         shape = RoundedCornerShape(12.dp)
                     ) {
@@ -276,7 +261,7 @@ fun TrackScreen(
                     },
                     modifier = Modifier.weight(1f),
                     colors = ButtonDefaults.buttonColors(
-                        containerColor = Color(0xFFEF4444).copy(alpha = 0.6f)
+                        containerColor = ErrorRed.copy(alpha = 0.6f)
                     ),
                     shape = RoundedCornerShape(12.dp)
                 ) {
@@ -340,7 +325,7 @@ fun TrackScreen(
                     Spacer(modifier = Modifier.height(8.dp))
                     Text("共 ${trackPoints.size} 个轨迹点", fontSize = 12.sp, color = Color(0xFF475569))
                     if (selectedDate != null) {
-                        Text("日期: $selectedDate", fontSize = 12.sp, color = Color(0xFF0EA5E9))
+                        Text("日期: $selectedDate", fontSize = 12.sp, color = PrimaryBlue)
                     }
                 }
             },
@@ -368,17 +353,11 @@ fun TrackScreen(
 
 @Composable
 fun TrackPointItem(point: TrackPoint) {
-    Card(
-        modifier = Modifier.fillMaxWidth(),
-        colors = CardDefaults.cardColors(
-            containerColor = Color.White.copy(alpha = 0.5f)
-        ),
-        shape = RoundedCornerShape(8.dp)
+    GlassCard(
+        modifier = Modifier.fillMaxWidth()
     ) {
         Row(
-            modifier = Modifier
-                .fillMaxWidth()
-                .padding(12.dp),
+            modifier = Modifier.fillMaxWidth(),
             horizontalArrangement = Arrangement.SpaceBetween
         ) {
             Column {
