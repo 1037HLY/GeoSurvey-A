@@ -102,7 +102,7 @@ fun CoordinateScreen() {
 
         Spacer(modifier = Modifier.height(12.dp))
 
-        // 当前坐标
+        // 当前坐标卡片
         GlassCard(
             modifier = Modifier.fillMaxWidth()
         ) {
@@ -143,29 +143,52 @@ fun CoordinateScreen() {
                 }
 
                 // ========== 自定义参数设置 ==========
+                Spacer(modifier = Modifier.height(12.dp))
+
+                // 分隔线
+                Divider(
+                    color = Color(0xFFE2E8F0),
+                    modifier = Modifier.padding(vertical = 4.dp)
+                )
+
+                Text(
+                    text = "⚙️ 高斯投影参数",
+                    fontSize = 14.sp,
+                    fontWeight = FontWeight.SemiBold,
+                    color = Color(0xFF0F172A)
+                )
+
                 Spacer(modifier = Modifier.height(8.dp))
 
+                // 自动/自定义切换
                 Row(
                     modifier = Modifier.fillMaxWidth(),
                     verticalAlignment = Alignment.CenterVertically
                 ) {
                     Switch(
                         checked = state.useCustomProjection,
-                        onCheckedChange = { viewModel.toggleUseCustomProjection() },
+                        onCheckedChange = {
+                            viewModel.toggleUseCustomProjection()
+                        },
                         colors = SwitchDefaults.colors(
                             checkedThumbColor = PrimaryBlue,
-                            checkedTrackColor = PrimaryBlue.copy(alpha = 0.5f)
+                            checkedTrackColor = PrimaryBlue.copy(alpha = 0.5f),
+                            uncheckedThumbColor = Color(0xFF94A3B8),
+                            uncheckedTrackColor = Color(0xFFE2E8F0)
                         )
                     )
                     Text(
                         text = if (state.useCustomProjection) "🔧 自定义参数" else "⚡ 自动计算",
-                        fontSize = 13.sp,
+                        fontSize = 14.sp,
+                        fontWeight = if (state.useCustomProjection) FontWeight.SemiBold else FontWeight.Normal,
                         color = if (state.useCustomProjection) PrimaryBlue else Color(0xFF475569)
                     )
                 }
 
+                // 自定义参数输入
                 if (state.useCustomProjection) {
-                    Spacer(modifier = Modifier.height(4.dp))
+                    Spacer(modifier = Modifier.height(8.dp))
+
                     Row(
                         modifier = Modifier.fillMaxWidth(),
                         horizontalArrangement = Arrangement.spacedBy(8.dp)
@@ -208,8 +231,10 @@ fun CoordinateScreen() {
                             onClick = {
                                 viewModel.updateCustomZone("")
                                 viewModel.updateCustomCentralMeridian("")
-                                viewModel.toggleUseCustomProjection()
-                                viewModel.toggleUseCustomProjection()
+                                // 切换回自动计算
+                                if (state.useCustomProjection) {
+                                    viewModel.toggleUseCustomProjection()
+                                }
                             },
                             modifier = Modifier.weight(1f),
                             colors = ButtonDefaults.buttonColors(
