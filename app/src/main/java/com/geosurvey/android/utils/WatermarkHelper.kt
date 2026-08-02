@@ -67,7 +67,7 @@ class WatermarkHelper(private val context: Context) {
         }
 
         if (config.showLocation && data.locationName.isNotEmpty()) {
-            lines.add("📍 $locationName")
+            lines.add("📍 ${data.locationName}")
         }
 
         if (config.showAttitude && data.dipDirection != null) {
