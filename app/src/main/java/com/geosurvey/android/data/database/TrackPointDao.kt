@@ -3,28 +3,25 @@ package com.geosurvey.android.data.database
 import androidx.room.Dao
 import androidx.room.Insert
 import androidx.room.Query
-import com.geosurvey.android.data.model.TrackPointEntity
+import com.geosurvey.android.data.model.TrackPoint
 import kotlinx.coroutines.flow.Flow
 
-/**
- * 轨迹点数据访问对象
- */
 @Dao
 interface TrackPointDao {
     @Insert
-    suspend fun insertTrackPoint(point: TrackPointEntity)
+    suspend fun insertTrackPoint(point: TrackPoint)
 
     @Insert
-    suspend fun insertTrackPoints(points: List<TrackPointEntity>)
+    suspend fun insertTrackPoints(points: List<TrackPoint>)
 
     @Query("SELECT * FROM track_points ORDER BY timestamp DESC")
-    fun getAllTrackPoints(): Flow<List<TrackPointEntity>>
+    fun getAllTrackPoints(): Flow<List<TrackPoint>>
 
     @Query("SELECT * FROM track_points WHERE timestamp BETWEEN :startTime AND :endTime ORDER BY timestamp ASC")
-    fun getTrackPointsBetween(startTime: Long, endTime: Long): Flow<List<TrackPointEntity>>
+    fun getTrackPointsBetween(startTime: Long, endTime: Long): Flow<List<TrackPoint>>
 
     @Query("SELECT * FROM track_points WHERE date(timestamp / 1000, 'unixepoch') = :date ORDER BY timestamp ASC")
-    fun getTrackPointsByDate(date: String): Flow<List<TrackPointEntity>>
+    fun getTrackPointsByDate(date: String): Flow<List<TrackPoint>>
 
     @Query("SELECT DISTINCT date(timestamp / 1000, 'unixepoch') as date FROM track_points ORDER BY date DESC")
     fun getAvailableDates(): Flow<List<String>>
