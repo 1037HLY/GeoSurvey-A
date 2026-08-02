@@ -116,6 +116,7 @@ fun AppNavigation() {
             composable("analysis") {
                 AnalysisScreen(navController = navController)
             }
+            // ⭐ 赤平投影页面 - 从attitudeViewModel获取数据
             composable("stereographic") {
                 val records = attitudeViewModel.state.value.records
                 StereographicScreen(
@@ -123,6 +124,7 @@ fun AppNavigation() {
                     onBack = { navController.popBackStack() }
                 )
             }
+            // ⭐ 玫瑰花图页面 - 从attitudeViewModel获取数据
             composable("rose") {
                 val records = attitudeViewModel.state.value.records
                 RoseDiagramScreen(
