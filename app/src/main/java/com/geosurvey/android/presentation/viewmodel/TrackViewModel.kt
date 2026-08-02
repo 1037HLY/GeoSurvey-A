@@ -20,6 +20,17 @@ class TrackViewModel(
     application: Application
 ) : AndroidViewModel(application) {
 
+    companion object {
+        @Volatile
+        private var INSTANCE: TrackViewModel? = null
+
+        fun getInstance(application: Application): TrackViewModel {
+            return INSTANCE ?: synchronized(this) {
+                INSTANCE ?: TrackViewModel(application).also { INSTANCE = it }
+            }
+        }
+    }
+
     private val trackRepository: TrackRepository =
         (application as GeoSurveyApplication).trackRepository
 
@@ -33,8 +44,9 @@ class TrackViewModel(
     val pointCount: StateFlow<Int> = _pointCount.asStateFlow()
 
     private var lastLocation: Location? = null
+    private var isReceiverRegistered = false
 
-    // ⭐ 广播接收器 - 接收服务发送的位置更新
+    // 广播接收器
     private val locationReceiver = object : BroadcastReceiver() {
         override fun onReceive(context: Context, intent: Intent) {
             val lat = intent.getDoubleExtra("latitude", 0.0)
@@ -65,9 +77,19 @@ class TrackViewModel(
 
     init {
         loadTrackPoints()
-        // 注册广播接收器
-        val filter = IntentFilter("LOCATION_UPDATE")
-        getApplication<GeoSurveyApplication>().registerReceiver(locationReceiver, filter)
+        registerReceiver()
+    }
+
+    private fun registerReceiver() {
+        if (!isReceiverRegistered) {
+            try {
+                val filter = IntentFilter("LOCATION_UPDATE")
+                getApplication<GeoSurveyApplication>().registerReceiver(locationReceiver, filter)
+                isReceiverRegistered = true
+            } catch (e: Exception) {
+                // 可能已经注册
+            }
+        }
     }
 
     fun startRecording() {
@@ -82,12 +104,10 @@ class TrackViewModel(
     fun addTrackPoint(location: Location) {
         if (!_isRecording.value) return
 
-        // 精度过滤
         if (location.accuracy != null && location.accuracy > MIN_ACCURACY) {
             return
         }
 
-        // 距离过滤
         if (lastLocation != null) {
             val distance = lastLocation!!.distanceTo(location)
             if (distance < MIN_DISTANCE) {
@@ -130,7 +150,10 @@ class TrackViewModel(
     override fun onCleared() {
         super.onCleared()
         try {
-            getApplication<GeoSurveyApplication>().unregisterReceiver(locationReceiver)
+            if (isReceiverRegistered) {
+                getApplication<GeoSurveyApplication>().unregisterReceiver(locationReceiver)
+                isReceiverRegistered = false
+            }
         } catch (e: Exception) {
             // ignore
         }
