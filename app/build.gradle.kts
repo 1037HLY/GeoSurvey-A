@@ -82,7 +82,7 @@ dependencies {
     // Navigation
     implementation("androidx.navigation:navigation-compose:2.7.6")
     
-    // ⭐ Room Database
+    // Room Database
     implementation("androidx.room:room-runtime:2.6.1")
     implementation("androidx.room:room-ktx:2.6.1")
     kapt("androidx.room:room-compiler:2.6.1")
@@ -93,6 +93,12 @@ dependencies {
     
     // Location & GNSS
     implementation("com.google.android.gms:play-services-location:21.0.1")
+    
+    // ⭐ 相机 (CameraX)
+    implementation("androidx.camera:camera-camera2:1.3.0")
+    implementation("androidx.camera:camera-lifecycle:1.3.0")
+    implementation("androidx.camera:camera-view:1.3.0")
+    implementation("androidx.camera:camera-extensions:1.3.0")
     
     // Permissions
     implementation("com.google.accompanist:accompanist-permissions:0.32.0")
