@@ -119,7 +119,7 @@ fun AppNavigation() {
                 HomeScreen()
             }
             composable("track") {
-                TrackScreen()
+                TrackScreen(navController = navController)
             }
             composable("attitude") {
                 AttitudeScreen()
@@ -141,13 +141,15 @@ fun AppNavigation() {
                     onBack = { navController.popBackStack() }
                 )
             }
-            // ⭐ 相机页面
             composable("camera") {
                 CameraScreen()
             }
-            // ⭐ 照片画廊页面
             composable("gallery") {
                 PhotoGalleryScreen()
+            }
+            // ⭐ 导航页面路由
+            composable("navigation") {
+                NavigationScreen()
             }
         }
     }
