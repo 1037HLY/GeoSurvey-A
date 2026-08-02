@@ -17,6 +17,7 @@ import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
+import androidx.navigation.NavController
 import com.geosurvey.android.GeoSurveyApplication
 import com.geosurvey.android.data.model.TrackPoint
 import com.geosurvey.android.domain.service.TrackingService
@@ -27,7 +28,9 @@ import java.text.SimpleDateFormat
 import java.util.*
 
 @Composable
-fun TrackScreen() {
+fun TrackScreen(
+    navController: NavController? = null
+) {
     val context = LocalContext.current
     val application = context.applicationContext as GeoSurveyApplication
     val coroutineScope = rememberCoroutineScope()
@@ -84,7 +87,7 @@ fun TrackScreen() {
             .fillMaxSize()
             .padding(16.dp)
     ) {
-        // 标题行
+        // ⭐ 标题行 - 添加导航入口
         Row(
             modifier = Modifier.fillMaxWidth(),
             horizontalArrangement = Arrangement.SpaceBetween,
@@ -96,10 +99,27 @@ fun TrackScreen() {
                 fontWeight = FontWeight.Bold,
                 color = Color(0xFF0F172A)
             )
-            // 导出全部按钮
-            if (trackPoints.isNotEmpty()) {
-                IconButton(onClick = { showExportDialog = true }) {
-                    Text("📤", fontSize = 20.sp)
+            // ⭐ 导航和导出按钮
+            Row(
+                horizontalArrangement = Arrangement.spacedBy(4.dp)
+            ) {
+                // 🧭 导航按钮 - 跳转到导航页面
+                if (trackPoints.isNotEmpty()) {
+                    IconButton(
+                        onClick = {
+                            navController?.navigate("navigation")
+                        }
+                    ) {
+                        Text("🧭", fontSize = 20.sp)
+                    }
+                }
+                // 📤 导出全部按钮
+                if (trackPoints.isNotEmpty()) {
+                    IconButton(
+                        onClick = { showExportDialog = true }
+                    ) {
+                        Text("📤", fontSize = 20.sp)
+                    }
                 }
             }
         }
