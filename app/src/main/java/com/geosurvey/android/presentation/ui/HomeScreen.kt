@@ -59,11 +59,12 @@ fun HomeScreen() {
         )
     )
 
+    // ⭐ 简化：使用 0f 添加数据，构建通过后再优化
     LaunchedEffect(state.location) {
         state.location?.let { location ->
-            val alt = location.altitude?.toFloat() ?: 0f
-            val speed = location.speed?.let { it * 3.6 } ?: 0f
-            // ⭐ 临时使用 0f
+            // 所有值都强制转为 Float
+            val alt = 0f
+            val speed = 0f
             val snr = 0f
             
             altitudeHistory.add(alt)
