@@ -150,9 +150,12 @@ fun AppNavigation() {
             composable("navigation") {
                 NavigationScreen()
             }
-            // ⭐ 坐标转换
             composable("coordinate") {
                 CoordinateScreen()
+            }
+            // ⭐ 钻孔计算页面路由
+            composable("borehole") {
+                BoreholeScreen()
             }
         }
     }
