@@ -219,20 +219,17 @@ fun BoreholeScreen() {
                 }
                 
                 Spacer(modifier = Modifier.height(8.dp))
-                Text("📊 钻孔柱状图", fontSize = 13.sp, fontWeight = FontWeight.SemiBold, color = Color(0xFF0F172A))
-                Spacer(modifier = Modifier.height(4.dp))
                 
                 // 投影示意图
-                ProjectionDiagram(
+                SimpleProjectionDiagram(
                     horizontal = resultHorizontal?.toDoubleOrNull() ?: 0.0,
-                    vertical = resultVertical?.toDoubleOrNull() ?: 0.0,
-                    dipAngle = resultDipAngle?.toDoubleOrNull() ?: 90.0
+                    vertical = resultVertical?.toDoubleOrNull() ?: 0.0
                 )
                 
                 Spacer(modifier = Modifier.height(8.dp))
                 
                 // 柱状图
-                SimpleColumnChart(
+                SimpleColumnChart2(
                     layers = layers,
                     totalDepth = boreholeDepth.toDoubleOrNull() ?: 10.0
                 )
@@ -283,13 +280,12 @@ fun BoreholeScreen() {
                         Text("📊 投影示意图", fontSize = 16.sp, fontWeight = FontWeight.SemiBold, color = Color(0xFF0F172A))
                         Spacer(modifier = Modifier.height(8.dp))
                         
-                        Card(modifier = Modifier.fillMaxWidth().height(200.dp).clip(RoundedCornerShape(12.dp)),
+                        Card(modifier = Modifier.fillMaxWidth().height(180.dp).clip(RoundedCornerShape(12.dp)),
                             colors = CardDefaults.cardColors(containerColor = Color.White)) {
                             Box(modifier = Modifier.fillMaxSize(), contentAlignment = Alignment.Center) {
-                                ProjectionDiagramFull(
+                                SimpleProjectionDiagramFull(
                                     horizontal = resultHorizontal?.toDoubleOrNull() ?: 0.0,
-                                    vertical = resultVertical?.toDoubleOrNull() ?: 0.0,
-                                    dipAngle = resultDipAngle?.toDoubleOrNull() ?: 90.0
+                                    vertical = resultVertical?.toDoubleOrNull() ?: 0.0
                                 )
                             }
                         }
@@ -299,10 +295,10 @@ fun BoreholeScreen() {
                         Text("📊 钻孔柱状图", fontSize = 16.sp, fontWeight = FontWeight.SemiBold, color = Color(0xFF0F172A))
                         Spacer(modifier = Modifier.height(8.dp))
                         
-                        Card(modifier = Modifier.fillMaxWidth().height(400.dp).clip(RoundedCornerShape(12.dp)),
+                        Card(modifier = Modifier.fillMaxWidth().height(350.dp).clip(RoundedCornerShape(12.dp)),
                             colors = CardDefaults.cardColors(containerColor = Color.White)) {
                             Box(modifier = Modifier.fillMaxSize(), contentAlignment = Alignment.Center) {
-                                ColumnChartFull(
+                                SimpleColumnChartFull2(
                                     layers = layers,
                                     totalDepth = boreholeDepth.toDoubleOrNull() ?: 10.0
                                 )
@@ -330,24 +326,19 @@ fun BoreholeScreen() {
     }
 }
 
+// ⭐ 简化版投影示意图
 @Composable
-fun ProjectionDiagram(horizontal: Double, vertical: Double, dipAngle: Double) {
-    Canvas(modifier = Modifier.fillMaxWidth().height(120.dp)) {
+fun SimpleProjectionDiagram(horizontal: Double, vertical: Double) {
+    Canvas(modifier = Modifier.fillMaxWidth().height(100.dp)) {
         val width = size.width
         val height = size.height
         val padding = 20f
-        val maxVal = max(horizontal.toFloat(), vertical.toFloat(), 1f)
-        val scale = (height - padding * 2) / maxVal / 1.2f
+        val maxVal = if (horizontal > vertical) horizontal.toFloat() else vertical.toFloat()
+        val scale = if (maxVal > 0) (height - padding * 2) / maxVal / 1.2f else 1f
 
         // 绘制轴线
         drawLine(Color(0xFF475569), Offset(padding, padding), Offset(padding, height - padding), strokeWidth = 2f)
         drawLine(Color(0xFF475569), Offset(padding, height - padding), Offset(width - padding, height - padding), strokeWidth = 2f)
-
-        // 绘制箭头
-        drawLine(Color(0xFF475569), Offset(padding, padding), Offset(padding - 6, padding + 12), strokeWidth = 2f)
-        drawLine(Color(0xFF475569), Offset(padding, padding), Offset(padding + 6, padding + 12), strokeWidth = 2f)
-        drawLine(Color(0xFF475569), Offset(width - padding, height - padding), Offset(width - padding - 12, height - padding - 6), strokeWidth = 2f)
-        drawLine(Color(0xFF475569), Offset(width - padding, height - padding), Offset(width - padding - 12, height - padding + 6), strokeWidth = 2f)
 
         // 绘制向量
         val endX = padding + (horizontal.toFloat() * scale)
@@ -362,21 +353,17 @@ fun ProjectionDiagram(horizontal: Double, vertical: Double, dipAngle: Double) {
 
         // 绘制标签点
         drawCircle(PrimaryBlue, radius = 6f, center = Offset(endX, endY))
-
-        // 标注文字（用圆点代替）
-        drawCircle(Color(0xFF475569), radius = 2f, center = Offset(endX, height - padding))
-        drawCircle(Color(0xFF475569), radius = 2f, center = Offset(padding, endY))
     }
 }
 
 @Composable
-fun ProjectionDiagramFull(horizontal: Double, vertical: Double, dipAngle: Double) {
+fun SimpleProjectionDiagramFull(horizontal: Double, vertical: Double) {
     Canvas(modifier = Modifier.fillMaxSize().padding(24.dp)) {
         val width = size.width
         val height = size.height
         val padding = 40f
-        val maxVal = max(horizontal.toFloat(), vertical.toFloat(), 1f)
-        val scale = (height - padding * 2) / maxVal / 1.2f
+        val maxVal = if (horizontal > vertical) horizontal.toFloat() else vertical.toFloat()
+        val scale = if (maxVal > 0) (height - padding * 2) / maxVal / 1.2f else 1f
 
         drawLine(Color(0xFF475569), Offset(padding, padding), Offset(padding, height - padding), strokeWidth = 2f)
         drawLine(Color(0xFF475569), Offset(padding, height - padding), Offset(width - padding, height - padding), strokeWidth = 2f)
@@ -391,21 +378,20 @@ fun ProjectionDiagramFull(horizontal: Double, vertical: Double, dipAngle: Double
             pathEffect = androidx.compose.ui.graphics.PathEffect.dashPathEffect(floatArrayOf(4f, 4f)))
 
         drawCircle(PrimaryBlue, radius = 8f, center = Offset(endX, endY))
-        drawCircle(Color(0xFF475569), radius = 3f, center = Offset(endX, height - padding))
-        drawCircle(Color(0xFF475569), radius = 3f, center = Offset(padding, endY))
     }
 }
 
+// ⭐ 简化版柱状图
 @Composable
-fun SimpleColumnChart(layers: List<BoreholeLayer>, totalDepth: Double) {
-    Canvas(modifier = Modifier.fillMaxWidth().height(150.dp)) {
+fun SimpleColumnChart2(layers: List<BoreholeLayer>, totalDepth: Double) {
+    Canvas(modifier = Modifier.fillMaxWidth().height(140.dp)) {
         val chartWidth = size.width
         val chartHeight = size.height
         val padding = 20f
         val barWidth = 40f
         val maxDepth = totalDepth.toFloat()
         
-        if (layers.isNotEmpty()) {
+        if (layers.isNotEmpty() && maxDepth > 0) {
             var currentDepth = 0f
             layers.forEach { layer ->
                 val depthVal = layer.depth.toFloatOrNull() ?: 0f
@@ -427,13 +413,12 @@ fun SimpleColumnChart(layers: List<BoreholeLayer>, totalDepth: Double) {
         } else {
             drawLine(Color(0xFF94A3B8), Offset(padding, padding + chartHeight / 2), Offset(padding + chartWidth - padding, padding + chartHeight / 2),
                 strokeWidth = 1f, pathEffect = androidx.compose.ui.graphics.PathEffect.dashPathEffect(floatArrayOf(5f, 5f)))
-            drawCircle(Color(0xFF94A3B8), radius = 3f, center = Offset(padding + chartWidth / 2, padding + chartHeight / 2))
         }
     }
 }
 
 @Composable
-fun ColumnChartFull(layers: List<BoreholeLayer>, totalDepth: Double) {
+fun SimpleColumnChartFull2(layers: List<BoreholeLayer>, totalDepth: Double) {
     Canvas(modifier = Modifier.fillMaxSize().padding(24.dp)) {
         val chartWidth = size.width
         val chartHeight = size.height
@@ -441,7 +426,7 @@ fun ColumnChartFull(layers: List<BoreholeLayer>, totalDepth: Double) {
         val barWidth = 60f
         val maxDepth = totalDepth.toFloat()
         
-        if (layers.isNotEmpty()) {
+        if (layers.isNotEmpty() && maxDepth > 0) {
             var currentDepth = 0f
             layers.forEach { layer ->
                 val depthVal = layer.depth.toFloatOrNull() ?: 0f
