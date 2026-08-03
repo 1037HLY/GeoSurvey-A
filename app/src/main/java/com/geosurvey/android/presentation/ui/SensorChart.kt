@@ -13,6 +13,7 @@ import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import com.geosurvey.android.presentation.ui.components.GlassCard
+import kotlin.math.max
 
 @Composable
 fun SensorChart(
@@ -49,14 +50,14 @@ fun SensorChart(
                 val chartHeight = height - padding * 2
 
                 if (data.size > 1) {
-                    // ⭐ 显式转换为 Float 列表避免类型歧义
+                    // ⭐ 显式转换为 Float 列表
                     val points = data.takeLast(50).map { it.toFloat() }
                     val step = chartWidth / (points.size - 1)
-                    // ⭐ 使用 maxOrNull() 并显式处理
+                    // ⭐ 使用 max 函数
                     val maxVal = max(maxValue, points.maxOrNull() ?: 1f)
 
                     for (i in 0..4) {
-                        val y = padding + chartHeight * (1 - i / 4f)
+                        val y = padding + chartHeight * (1f - i / 4f)
                         drawLine(
                             color = Color(0xFFE2E8F0).copy(alpha = 0.3f),
                             start = Offset(padding, y),
@@ -68,7 +69,7 @@ fun SensorChart(
                     val path = androidx.compose.ui.graphics.Path().apply {
                         points.forEachIndexed { index, value ->
                             val x = padding + index * step
-                            val y = padding + chartHeight * (1 - value / maxVal)
+                            val y = padding + chartHeight * (1f - value / maxVal)
                             if (index == 0) {
                                 moveTo(x, y)
                             } else {
@@ -87,7 +88,7 @@ fun SensorChart(
                         moveTo(padding, padding + chartHeight)
                         points.forEachIndexed { index, value ->
                             val x = padding + index * step
-                            val y = padding + chartHeight * (1 - value / maxVal)
+                            val y = padding + chartHeight * (1f - value / maxVal)
                             lineTo(x, y)
                         }
                         lineTo(lastX, padding + chartHeight)
