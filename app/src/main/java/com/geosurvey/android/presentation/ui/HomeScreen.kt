@@ -45,7 +45,7 @@ fun HomeScreen() {
 
     var showSatelliteDetail by remember { mutableStateOf(false) }
 
-    // ⭐ 第71行：使用 mutableStateListOf 存储 Float 类型
+    // 传感器历史数据 - 使用 mutableStateListOf 存储 Float
     val altitudeHistory = remember { mutableStateListOf<Float>() }
     val speedHistory = remember { mutableStateListOf<Float>() }
     val snrHistory = remember { mutableStateListOf<Float>() }
@@ -63,9 +63,10 @@ fun HomeScreen() {
     // 监听位置更新，更新历史数据
     LaunchedEffect(state.location) {
         state.location?.let { location ->
-            val alt = location.altitude?.toFloat() ?: 0f
-            val speed = location.speed?.let { it * 3.6 } ?: 0f
-            val snr = state.averageSnr
+            // ⭐ 第72行：明确转换为 Float 类型
+            val alt: Float = location.altitude?.toFloat() ?: 0f
+            val speed: Float = location.speed?.let { it * 3.6 } ?: 0f
+            val snr: Float = state.averageSnr
             
             // 添加数据
             altitudeHistory.add(alt)
