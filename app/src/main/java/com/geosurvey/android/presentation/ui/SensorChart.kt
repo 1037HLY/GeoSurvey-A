@@ -13,15 +13,14 @@ import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import com.geosurvey.android.presentation.ui.components.GlassCard
-import kotlin.math.max
 
 @Composable
 fun SensorChart(
     title: String,
-    data: List<Float>,
+    data: List<Double>,  // ⭐ 改为 Double 类型
     color: Color,
     unit: String = "",
-    maxValue: Float = 100f
+    maxValue: Double = 100.0  // ⭐ 改为 Double
 ) {
     GlassCard(
         modifier = Modifier
@@ -50,11 +49,9 @@ fun SensorChart(
                 val chartHeight = height - padding * 2
 
                 if (data.size > 1) {
-                    // ⭐ 显式转换为 Float 列表
-                    val points = data.takeLast(50).map { it.toFloat() }
+                    val points = data.takeLast(50)
                     val step = chartWidth / (points.size - 1)
-                    // ⭐ 使用 max 函数
-                    val maxVal = max(maxValue, points.maxOrNull() ?: 1f)
+                    val maxVal = max(maxValue, points.maxOrNull() ?: 1.0)
 
                     for (i in 0..4) {
                         val y = padding + chartHeight * (1f - i / 4f)
@@ -69,7 +66,7 @@ fun SensorChart(
                     val path = androidx.compose.ui.graphics.Path().apply {
                         points.forEachIndexed { index, value ->
                             val x = padding + index * step
-                            val y = padding + chartHeight * (1f - value / maxVal)
+                            val y = padding + chartHeight * (1f - (value / maxVal).toFloat())
                             if (index == 0) {
                                 moveTo(x, y)
                             } else {
@@ -88,7 +85,7 @@ fun SensorChart(
                         moveTo(padding, padding + chartHeight)
                         points.forEachIndexed { index, value ->
                             val x = padding + index * step
-                            val y = padding + chartHeight * (1f - value / maxVal)
+                            val y = padding + chartHeight * (1f - (value / maxVal).toFloat())
                             lineTo(x, y)
                         }
                         lineTo(lastX, padding + chartHeight)
