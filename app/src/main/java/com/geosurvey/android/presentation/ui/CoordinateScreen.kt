@@ -7,7 +7,9 @@ import android.os.Looper
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
+import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.shape.RoundedCornerShape
+import androidx.compose.foundation.verticalScroll
 import androidx.compose.material3.*
 import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
@@ -37,13 +39,11 @@ import kotlinx.coroutines.launch
 import java.text.SimpleDateFormat
 import java.util.*
 
-// ⭐ 转换方向枚举移到顶层
 enum class ConvertDirection {
     LATLON_TO_GAUSS,
     GAUSS_TO_LATLON
 }
 
-@OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun CoordinateScreen() {
     val context = LocalContext.current
@@ -159,9 +159,11 @@ fun CoordinateScreen() {
         }
     }
 
+    // ⭐ 使用 Column + verticalScroll 替代 LazyColumn，确保所有内容可见
     Column(
         modifier = Modifier
             .fillMaxSize()
+            .verticalScroll(rememberScrollState())
             .padding(16.dp),
         verticalArrangement = Arrangement.Top
     ) {
@@ -309,7 +311,7 @@ fun CoordinateScreen() {
             )
             Spacer(modifier = Modifier.height(8.dp))
 
-            // ⭐ 转换方向选择 - 使用Button替代FilterChip
+            // 转换方向选择
             Row(
                 modifier = Modifier.fillMaxWidth(),
                 horizontalArrangement = Arrangement.spacedBy(8.dp)
@@ -592,7 +594,7 @@ fun CoordinateScreen() {
             }
         }
 
-        Spacer(modifier = Modifier.height(12.dp))
+        Spacer(modifier = Modifier.height(16.dp))
 
         // ========== 历史记录 ==========
         Text(
@@ -606,7 +608,9 @@ fun CoordinateScreen() {
 
         if (state.records.isEmpty()) {
             Box(
-                modifier = Modifier.fillMaxSize(),
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .height(120.dp),
                 contentAlignment = Alignment.Center
             ) {
                 Text(
@@ -617,7 +621,9 @@ fun CoordinateScreen() {
             }
         } else {
             LazyColumn(
-                modifier = Modifier.fillMaxSize(),
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .heightIn(max = 300.dp),
                 verticalArrangement = Arrangement.spacedBy(4.dp)
             ) {
                 items(state.records) { record ->
@@ -625,6 +631,9 @@ fun CoordinateScreen() {
                 }
             }
         }
+
+        // ⭐ 底部留白，确保内容不被切掉
+        Spacer(modifier = Modifier.height(80.dp))
     }
 
     // ========== 投影参数设置对话框 ==========
