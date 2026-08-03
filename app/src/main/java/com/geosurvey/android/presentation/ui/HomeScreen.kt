@@ -7,6 +7,7 @@ import androidx.activity.result.contract.ActivityResultContracts
 import androidx.compose.animation.core.*
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.*
+import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material3.*
 import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
@@ -44,10 +45,10 @@ fun HomeScreen() {
 
     var showSatelliteDetail by remember { mutableStateOf(false) }
 
-    // 传感器历史数据
-    var altitudeHistory by remember { mutableStateOf<List<Float>>(emptyList()) }
-    var speedHistory by remember { mutableStateOf<List<Float>>(emptyList()) }
-    var snrHistory by remember { mutableStateOf<List<Float>>(emptyList()) }
+    // 传感器历史数据 - 使用 mutableStateListOf 避免类型问题
+    val altitudeHistory = remember { mutableStateListOf<Float>() }
+    val speedHistory = remember { mutableStateListOf<Float>() }
+    val snrHistory = remember { mutableStateListOf<Float>() }
 
     val infiniteTransition = rememberInfiniteTransition()
     val pulse by infiniteTransition.animateFloat(
@@ -66,10 +67,15 @@ fun HomeScreen() {
             val speed = location.speed?.let { it * 3.6 } ?: 0f
             val snr = state.averageSnr
             
-            // ⭐ 修复：使用 toFloat() 确保类型匹配
-            altitudeHistory = (altitudeHistory + alt).takeLast(50)
-            speedHistory = (speedHistory + speed).takeLast(50)
-            snrHistory = (snrHistory + snr).takeLast(50)
+            altitudeHistory.add(alt)
+            speedHistory.add(speed)
+            snrHistory.add(snr)
+            
+            if (altitudeHistory.size > 50) {
+                altitudeHistory.removeAt(0)
+                speedHistory.removeAt(0)
+                snrHistory.removeAt(0)
+            }
         }
     }
 
@@ -138,7 +144,6 @@ fun HomeScreen() {
 
         Spacer(modifier = Modifier.height(20.dp))
 
-        // 定位信息卡片
         GlassCard(
             modifier = Modifier.fillMaxWidth()
         ) {
@@ -147,7 +152,6 @@ fun HomeScreen() {
 
         Spacer(modifier = Modifier.height(12.dp))
 
-        // 卫星状态卡片 - 点击展开全屏
         GlassCard(
             modifier = Modifier
                 .fillMaxWidth()
@@ -162,7 +166,6 @@ fun HomeScreen() {
 
         Spacer(modifier = Modifier.height(12.dp))
 
-        // 轨迹记录状态
         GlassCard(
             modifier = Modifier.fillMaxWidth()
         ) {
@@ -190,7 +193,6 @@ fun HomeScreen() {
 
         Spacer(modifier = Modifier.height(12.dp))
 
-        // 操作按钮
         Row(
             modifier = Modifier.fillMaxWidth(),
             horizontalArrangement = Arrangement.spacedBy(12.dp)
@@ -220,7 +222,6 @@ fun HomeScreen() {
 
         Spacer(modifier = Modifier.height(12.dp))
 
-        // 传感器实时曲线
         Text(
             text = "📊 传感器实时曲线",
             fontSize = 16.sp,
@@ -273,11 +274,10 @@ fun HomeScreen() {
         Dialog(
             onDismissRequest = { showSatelliteDetail = false }
         ) {
-            // ⭐ 使用 Surface 包裹，不设置 usePlatformDefaultWidth
             Surface(
                 modifier = Modifier
                     .fillMaxWidth()
-                    .fillMaxHeight()
+                    .fillMaxHeight(0.9f)
                     .padding(8.dp),
                 shape = RoundedCornerShape(16.dp),
                 color = Color(0xFF0F172A)
