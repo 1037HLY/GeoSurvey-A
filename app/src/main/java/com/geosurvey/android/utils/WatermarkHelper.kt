@@ -63,7 +63,7 @@ class WatermarkHelper(private val context: Context) {
         val lines = mutableListOf<String>()
         val sdf = SimpleDateFormat("yyyy-MM-dd HH:mm:ss", Locale.CHINA)
 
-        // ⭐ 只添加一次坐标
+        // 坐标
         if (config.showCoordinates) {
             lines.add("📍 ${String.format("%.6f", data.latitude)}, ${String.format("%.6f", data.longitude)}")
             data.altitude?.let {
@@ -71,11 +71,15 @@ class WatermarkHelper(private val context: Context) {
             }
         }
 
-        // ⭐ 位置名称（省市县乡镇村）
+        // ⭐ 修复：只显示有效的地点名称（过滤掉错误信息）
         if (config.showLocation && data.locationName.isNotEmpty() && 
             !data.locationName.contains("失败") && 
             !data.locationName.contains("无网络") &&
-            !data.locationName.contains("Timeout")) {
+            !data.locationName.contains("Timeout") &&
+            !data.locationName.startsWith("获取") &&
+            !data.locationName.startsWith("无法") &&
+            !data.locationName.startsWith("未知") &&
+            !data.locationName.startsWith("等待")) {
             lines.add("📍 ${data.locationName}")
         }
 
