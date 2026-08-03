@@ -17,10 +17,10 @@ import com.geosurvey.android.presentation.ui.components.GlassCard
 @Composable
 fun SensorChart(
     title: String,
-    data: List<Double>,  // ⭐ 改为 Double 类型
+    data: List<Double>,
     color: Color,
     unit: String = "",
-    maxValue: Double = 100.0  // ⭐ 改为 Double
+    maxValue: Double = 100.0
 ) {
     GlassCard(
         modifier = Modifier
@@ -30,6 +30,7 @@ fun SensorChart(
         Column(
             modifier = Modifier.fillMaxSize()
         ) {
+            // 标题
             Text(
                 text = "$title ${if (data.isNotEmpty()) String.format("%.1f", data.last()) else "--"} $unit",
                 fontSize = 12.sp,
@@ -37,6 +38,8 @@ fun SensorChart(
                 color = Color(0xFF0F172A)
             )
             Spacer(modifier = Modifier.height(4.dp))
+            
+            // 曲线图
             Canvas(
                 modifier = Modifier
                     .fillMaxWidth()
@@ -49,10 +52,18 @@ fun SensorChart(
                 val chartHeight = height - padding * 2
 
                 if (data.size > 1) {
+                    // 取最近50个点
                     val points = data.takeLast(50)
                     val step = chartWidth / (points.size - 1)
-                    val maxVal = max(maxValue, points.maxOrNull() ?: 1.0)
+                    
+                    // 找最大值
+                    var maxVal = 1.0
+                    for (value in points) {
+                        if (value > maxVal) maxVal = value
+                    }
+                    if (maxVal < maxValue) maxVal = maxValue
 
+                    // 绘制网格线
                     for (i in 0..4) {
                         val y = padding + chartHeight * (1f - i / 4f)
                         drawLine(
@@ -63,15 +74,18 @@ fun SensorChart(
                         )
                     }
 
-                    val path = androidx.compose.ui.graphics.Path().apply {
-                        points.forEachIndexed { index, value ->
-                            val x = padding + index * step
-                            val y = padding + chartHeight * (1f - (value / maxVal).toFloat())
-                            if (index == 0) {
-                                moveTo(x, y)
-                            } else {
-                                lineTo(x, y)
-                            }
+                    // 绘制曲线
+                    var first = true
+                    val path = androidx.compose.ui.graphics.Path()
+                    for (i in points.indices) {
+                        val x = padding + i * step
+                        val ratio = (points[i] / maxVal).toFloat()
+                        val y = padding + chartHeight * (1f - ratio)
+                        if (first) {
+                            path.moveTo(x, y)
+                            first = false
+                        } else {
+                            path.lineTo(x, y)
                         }
                     }
                     drawPath(
@@ -80,23 +94,27 @@ fun SensorChart(
                         style = Stroke(width = 2f)
                     )
 
-                    val fillPath = androidx.compose.ui.graphics.Path().apply {
+                    // 绘制填充
+                    if (points.isNotEmpty()) {
+                        val fillPath = androidx.compose.ui.graphics.Path()
                         val lastX = padding + (points.size - 1) * step
-                        moveTo(padding, padding + chartHeight)
-                        points.forEachIndexed { index, value ->
-                            val x = padding + index * step
-                            val y = padding + chartHeight * (1f - (value / maxVal).toFloat())
-                            lineTo(x, y)
+                        fillPath.moveTo(padding, padding + chartHeight)
+                        for (i in points.indices) {
+                            val x = padding + i * step
+                            val ratio = (points[i] / maxVal).toFloat()
+                            val y = padding + chartHeight * (1f - ratio)
+                            fillPath.lineTo(x, y)
                         }
-                        lineTo(lastX, padding + chartHeight)
-                        close()
+                        fillPath.lineTo(lastX, padding + chartHeight)
+                        fillPath.close()
+                        drawPath(
+                            path = fillPath,
+                            color = color.copy(alpha = 0.15f),
+                            style = Stroke(width = 0f)
+                        )
                     }
-                    drawPath(
-                        path = fillPath,
-                        color = color.copy(alpha = 0.15f),
-                        style = Stroke(width = 0f)
-                    )
                 } else {
+                    // 无数据时显示虚线
                     drawLine(
                         color = Color(0xFF94A3B8),
                         start = Offset(padding, padding + chartHeight / 2),
