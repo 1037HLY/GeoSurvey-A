@@ -2,7 +2,6 @@ package com.geosurvey.android.presentation.ui
 
 import androidx.compose.foundation.Canvas
 import androidx.compose.foundation.layout.*
-import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material3.*
 import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
@@ -13,9 +12,7 @@ import androidx.compose.ui.graphics.drawscope.Stroke
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
-import com.geosurvey.android.presentation.theme.*
 import com.geosurvey.android.presentation.ui.components.GlassCard
-import kotlin.math.*
 
 @Composable
 fun SensorChart(
