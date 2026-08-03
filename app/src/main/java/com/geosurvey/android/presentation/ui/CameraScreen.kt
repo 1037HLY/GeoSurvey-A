@@ -355,14 +355,15 @@ fun CameraScreen() {
                                     val geocodingHelper = GeocodingHelper(context)
                                     val loc = location
 
-                                    // ⭐ 修复：位置名称获取失败时显示经纬度
+                                    // ⭐ 获取详细地址（省市县乡镇村）
                                     val locationName = if (loc != null && showLocation) {
                                         try {
-                                            val name = geocodingHelper.getSimpleLocationName(loc.latitude, loc.longitude)
-                                            if (name.contains("失败") || name.contains("无网络") || name.isEmpty() || name.contains("Timeout")) {
+                                            val locationInfo = geocodingHelper.getLocationName(loc.latitude, loc.longitude)
+                                            val fullAddress = locationInfo.fullName
+                                            if (fullAddress.contains("失败") || fullAddress.contains("无网络") || fullAddress.isEmpty()) {
                                                 String.format("%.5f, %.5f", loc.latitude, loc.longitude)
                                             } else {
-                                                name
+                                                fullAddress
                                             }
                                         } catch (e: Exception) {
                                             String.format("%.5f, %.5f", loc.latitude, loc.longitude)
