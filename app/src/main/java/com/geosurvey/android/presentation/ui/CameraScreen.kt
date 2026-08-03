@@ -60,13 +60,11 @@ fun CameraScreen() {
     var toastMessage by remember { mutableStateOf("") }
     var isSaving by remember { mutableStateOf(false) }
 
-    // 相机相关
     var imageCapture by remember { mutableStateOf<ImageCapture?>(null) }
     var cameraExecutor by remember { mutableStateOf<ExecutorService?>(null) }
 
     val coroutineScope = rememberCoroutineScope()
 
-    // 定位回调
     val locationCallback = remember {
         object : LocationCallback() {
             override fun onLocationResult(result: LocationResult) {
@@ -78,13 +76,11 @@ fun CameraScreen() {
         }
     }
 
-    // 权限检查
     val cameraPermission = ContextCompat.checkSelfPermission(context, Manifest.permission.CAMERA)
     val fineLocationPermission = ContextCompat.checkSelfPermission(
         context, Manifest.permission.ACCESS_FINE_LOCATION
     )
 
-    // 启动定位
     LaunchedEffect(Unit) {
         if (fineLocationPermission == PackageManager.PERMISSION_GRANTED) {
             val locationRequest = LocationRequest.Builder(
@@ -101,15 +97,12 @@ fun CameraScreen() {
         }
     }
 
-    // 清理
     DisposableEffect(Unit) {
         onDispose {
             try {
                 fusedLocationClient.removeLocationUpdates(locationCallback)
                 cameraExecutor?.shutdown()
-            } catch (e: Exception) {
-                // ignore
-            }
+            } catch (e: Exception) { }
         }
     }
 
@@ -118,7 +111,6 @@ fun CameraScreen() {
             .fillMaxSize()
             .padding(16.dp)
     ) {
-        // 标题
         Text(
             text = "📷 水印相机",
             fontSize = 24.sp,
@@ -128,7 +120,6 @@ fun CameraScreen() {
 
         Spacer(modifier = Modifier.height(12.dp))
 
-        // 相机预览
         Card(
             modifier = Modifier
                 .fillMaxWidth()
@@ -174,7 +165,6 @@ fun CameraScreen() {
                         modifier = Modifier.fillMaxSize()
                     )
 
-                    // 拍照按钮
                     Box(
                         modifier = Modifier
                             .fillMaxSize()
@@ -222,7 +212,6 @@ fun CameraScreen() {
                         }
                     }
 
-                    // 位置信息
                     Column(
                         modifier = Modifier
                             .align(Alignment.TopStart)
@@ -258,7 +247,6 @@ fun CameraScreen() {
 
         Spacer(modifier = Modifier.height(12.dp))
 
-        // 水印设置
         Card(
             modifier = Modifier.fillMaxWidth(),
             colors = CardDefaults.cardColors(
@@ -308,7 +296,6 @@ fun CameraScreen() {
 
                 Spacer(modifier = Modifier.height(8.dp))
 
-                // 拍照/预览按钮
                 Row(
                     modifier = Modifier.fillMaxWidth(),
                     horizontalArrangement = Arrangement.spacedBy(8.dp)
@@ -316,20 +303,23 @@ fun CameraScreen() {
                     if (showPreview && capturedImage != null) {
                         Button(
                             onClick = {
-                                // 保存带水印的照片
                                 isSaving = true
                                 coroutineScope.launch {
                                     val helper = WatermarkHelper(context)
                                     val geocodingHelper = GeocodingHelper(context)
-                                    val loc = state.currentLocation
-
-                                    // ⭐ 获取位置名称
+                                    
+                                    // ⭐ 直接从 location 变量获取位置
+                                    val loc = location
+                                    
+                                    // 获取位置名称
                                     val locationName = if (loc != null) {
-                                        runCatching {
+                                        try {
                                             geocodingHelper.getSimpleLocationName(loc.latitude, loc.longitude)
-                                        }.getOrNull() ?: ""
+                                        } catch (e: Exception) {
+                                            "获取位置失败"
+                                        }
                                     } else {
-                                        ""
+                                        "未知位置"
                                     }
 
                                     val data = WatermarkHelper.WatermarkData(
@@ -409,7 +399,6 @@ fun CameraScreen() {
 
         Spacer(modifier = Modifier.height(8.dp))
 
-        // Toast提示
         if (showToast) {
             LaunchedEffect(Unit) {
                 kotlinx.coroutines.delay(2500)
@@ -429,7 +418,6 @@ fun CameraScreen() {
     }
 }
 
-// 图片转换函数
 fun imageProxyToBitmap(image: ImageProxy): Bitmap? {
     val buffer = image.planes[0].buffer
     val bytes = ByteArray(buffer.remaining())
