@@ -53,6 +53,7 @@ class LocationViewModel : ViewModel() {
 
     private var isFirstFix = true
     private var startTime = 0L
+    private var isLocationStarted = false
 
     private val locationCallback = object : LocationCallback() {
         override fun onLocationResult(result: LocationResult) {
@@ -62,7 +63,7 @@ class LocationViewModel : ViewModel() {
         }
     }
 
-    private val harmonyLocationListener = object : android.location.LocationListener {
+    private val systemLocationListener = object : android.location.LocationListener {
         override fun onLocationChanged(location: Location) {
             updateLocation(location)
         }
@@ -71,7 +72,11 @@ class LocationViewModel : ViewModel() {
 
         override fun onProviderEnabled(provider: String) {}
 
-        override fun onProviderDisabled(provider: String) {}
+        override fun onProviderDisabled(provider: String) {
+            _state.value = _state.value.copy(
+                errorMessage = "GPS已禁用，请开启GPS定位"
+            )
+        }
     }
 
     private fun updateLocation(location: Location) {
@@ -105,10 +110,14 @@ class LocationViewModel : ViewModel() {
 
     fun startLocation() {
         val ctx = context ?: return
+        val manager = locationManager ?: return
 
         if (ActivityCompat.checkSelfPermission(ctx, Manifest.permission.ACCESS_FINE_LOCATION) != PackageManager.PERMISSION_GRANTED) {
             return
         }
+
+        if (isLocationStarted) return
+        isLocationStarted = true
 
         _state.value = _state.value.copy(
             isActive = true,
@@ -121,16 +130,78 @@ class LocationViewModel : ViewModel() {
         isFirstFix = true
 
         if (isHarmonyOS) {
-            startHarmonyLocation()
+            startHarmonyOSLocation()
         } else {
-            startStandardLocation()
+            startAndroidLocation()
         }
 
         startSatelliteSimulation()
         startTimeoutCheck()
+        
+        if (!manager.isProviderEnabled(LocationManager.GPS_PROVIDER)) {
+            _state.value = _state.value.copy(
+                errorMessage = if (isHarmonyOS) {
+                    "请开启GPS定位（鸿蒙系统设置）"
+                } else {
+                    "请开启GPS定位"
+                }
+            )
+        }
     }
 
-    private fun startStandardLocation() {
+    private fun startHarmonyOSLocation() {
+        val ctx = context ?: return
+        val manager = locationManager ?: return
+
+        if (ActivityCompat.checkSelfPermission(ctx, Manifest.permission.ACCESS_FINE_LOCATION) != PackageManager.PERMISSION_GRANTED) {
+            return
+        }
+
+        try {
+            if (manager.isProviderEnabled(LocationManager.GPS_PROVIDER)) {
+                manager.requestLocationUpdates(
+                    LocationManager.GPS_PROVIDER,
+                    1000L,
+                    0f,
+                    systemLocationListener,
+                    Looper.getMainLooper()
+                )
+            }
+
+            if (manager.isProviderEnabled(LocationManager.NETWORK_PROVIDER)) {
+                manager.requestLocationUpdates(
+                    LocationManager.NETWORK_PROVIDER,
+                    2000L,
+                    0f,
+                    systemLocationListener,
+                    Looper.getMainLooper()
+                )
+            }
+
+            try {
+                startAndroidLocation()
+            } catch (e: Exception) { }
+
+            val lastKnownGps = manager.getLastKnownLocation(LocationManager.GPS_PROVIDER)
+            val lastKnownNetwork = manager.getLastKnownLocation(LocationManager.NETWORK_PROVIDER)
+            
+            val bestLocation = if (lastKnownGps != null) lastKnownGps else lastKnownNetwork
+            bestLocation?.let {
+                updateLocation(it)
+            }
+
+        } catch (e: Exception) {
+            try {
+                startAndroidLocation()
+            } catch (e2: Exception) {
+                _state.value = _state.value.copy(
+                    errorMessage = "定位服务异常，请重启应用"
+                )
+            }
+        }
+    }
+
+    private fun startAndroidLocation() {
         val client = fusedLocationClient ?: return
         val ctx = context ?: return
 
@@ -153,64 +224,11 @@ class LocationViewModel : ViewModel() {
         )
     }
 
-    private fun startHarmonyLocation() {
-        val ctx = context ?: return
-        val manager = locationManager ?: return
-
-        if (ActivityCompat.checkSelfPermission(ctx, Manifest.permission.ACCESS_FINE_LOCATION) != PackageManager.PERMISSION_GRANTED) {
-            return
-        }
-
-        try {
-            if (manager.isProviderEnabled(LocationManager.GPS_PROVIDER)) {
-                manager.requestLocationUpdates(
-                    LocationManager.GPS_PROVIDER,
-                    1000L,
-                    1f,
-                    harmonyLocationListener,
-                    Looper.getMainLooper()
-                )
-            }
-
-            if (manager.isProviderEnabled(LocationManager.NETWORK_PROVIDER)) {
-                manager.requestLocationUpdates(
-                    LocationManager.NETWORK_PROVIDER,
-                    2000L,
-                    10f,
-                    harmonyLocationListener,
-                    Looper.getMainLooper()
-                )
-            }
-
-            try {
-                startStandardLocation()
-            } catch (e: Exception) {
-                // ignore
-            }
-
-            if (!manager.isProviderEnabled(LocationManager.GPS_PROVIDER)) {
-                _state.value = _state.value.copy(
-                    errorMessage = "请开启GPS定位（鸿蒙系统）"
-                )
-            }
-
-        } catch (e: Exception) {
-            try {
-                startStandardLocation()
-            } catch (e2: Exception) {
-                _state.value = _state.value.copy(
-                    errorMessage = "定位服务异常: ${e.message}"
-                )
-            }
-        }
-    }
-
     private fun startSatelliteSimulation() {
         viewModelScope.launch {
             while (_state.value.isActive) {
                 val hasFix = _state.value.location != null
                 
-                // 修复：确保总数 = GPS + GLONASS + 北斗 + Galileo
                 val gps = (2 + Math.random() * 6).toInt()
                 val glonass = (1 + Math.random() * 4).toInt()
                 val beidou = (1 + Math.random() * 4).toInt()
@@ -250,7 +268,7 @@ class LocationViewModel : ViewModel() {
 
     private fun startTimeoutCheck() {
         viewModelScope.launch {
-            delay(45000) // 45秒超时
+            delay(60000)
             if (_state.value.location == null && _state.value.isActive) {
                 val msg = if (isHarmonyOS) {
                     "定位超时，请检查GPS设置（鸿蒙系统）"
@@ -266,6 +284,7 @@ class LocationViewModel : ViewModel() {
     }
 
     fun stopLocation() {
+        isLocationStarted = false
         _state.value = _state.value.copy(
             isActive = false,
             isSearching = false,
@@ -274,19 +293,15 @@ class LocationViewModel : ViewModel() {
 
         fusedLocationClient?.removeLocationUpdates(locationCallback)
         try {
-            locationManager?.removeUpdates(harmonyLocationListener)
-        } catch (e: Exception) {
-            // ignore
-        }
+            locationManager?.removeUpdates(systemLocationListener)
+        } catch (e: Exception) { }
     }
 
     override fun onCleared() {
         super.onCleared()
         fusedLocationClient?.removeLocationUpdates(locationCallback)
         try {
-            locationManager?.removeUpdates(harmonyLocationListener)
-        } catch (e: Exception) {
-            // ignore
-        }
+            locationManager?.removeUpdates(systemLocationListener)
+        } catch (e: Exception) { }
     }
 }
