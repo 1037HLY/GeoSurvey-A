@@ -33,7 +33,7 @@ data class LocationState(
     val glonassCount: Int = 0,
     val beidouCount: Int = 0,
     val galileoCount: Int = 0,
-    val averageSnr: Float = 0f,
+    val averageSnr: Float = 0f,  // ⭐ 确保是 Float 类型
     val qualityText: String = "等待定位",
     val qualityColor: Color = Color(0xFF94A3B8),
     val isSearching: Boolean = false,
@@ -244,7 +244,7 @@ class LocationViewModel : ViewModel() {
                     glonassCount = glonass,
                     beidouCount = beidou,
                     galileoCount = galileo,
-                    averageSnr = 20f + (Math.random() * 20).toFloat(),
+                    averageSnr = (20f + (Math.random() * 20).toFloat()),  // ⭐ 确保是 Float
                     qualityText = when {
                         hasFix && total > 15 -> "优秀 🌟"
                         hasFix && total > 10 -> "良好 ✅"
