@@ -13,7 +13,11 @@
     <uses-permission android:name="android.permission.WRITE_EXTERNAL_STORAGE" />
     <uses-permission android:name="android.permission.READ_EXTERNAL_STORAGE" />
     
-    <!-- ⭐ 相机权限 -->
+    <!-- ⭐ 鸿蒙系统兼容权限 -->
+    <uses-permission android:name="android.permission.ACCESS_NETWORK_STATE" />
+    <uses-permission android:name="android.permission.ACCESS_WIFI_STATE" />
+    
+    <!-- 相机权限 -->
     <uses-permission android:name="android.permission.CAMERA" />
     <uses-feature android:name="android.hardware.camera" android:required="true" />
     <uses-feature android:name="android.hardware.camera.autofocus" android:required="false" />
@@ -25,6 +29,7 @@
         android:supportsRtl="true"
         android:theme="@style/Theme.GeoSurveyAndroid"
         android:requestLegacyExternalStorage="true"
+        android:usesCleartextTraffic="false"
         tools:targetApi="31">
 
         <activity
@@ -43,7 +48,6 @@
             android:exported="false"
             android:foregroundServiceType="location" />
 
-        <!-- ⭐ FileProvider -->
         <provider
             android:name="androidx.core.content.FileProvider"
             android:authorities="${applicationId}.fileprovider"
