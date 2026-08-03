@@ -49,8 +49,10 @@ fun SensorChart(
                 val chartHeight = height - padding * 2
 
                 if (data.size > 1) {
-                    val points = data.takeLast(50)
+                    // ⭐ 显式转换为 Float 列表避免类型歧义
+                    val points = data.takeLast(50).map { it.toFloat() }
                     val step = chartWidth / (points.size - 1)
+                    // ⭐ 使用 maxOrNull() 并显式处理
                     val maxVal = max(maxValue, points.maxOrNull() ?: 1f)
 
                     for (i in 0..4) {
