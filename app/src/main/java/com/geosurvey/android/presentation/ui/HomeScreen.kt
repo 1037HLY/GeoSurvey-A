@@ -7,6 +7,7 @@ import androidx.activity.result.contract.ActivityResultContracts
 import androidx.compose.animation.core.*
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.*
+import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material3.*
 import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
@@ -41,10 +42,8 @@ fun HomeScreen() {
     val state by locationViewModel.state.collectAsState()
     val isRecording by trackViewModel.isRecording.collectAsState()
 
-    // ⭐ 卫星详情对话框状态
     var showSatelliteDetail by remember { mutableStateOf(false) }
 
-    // 脉冲动画
     val infiniteTransition = rememberInfiniteTransition()
     val pulse by infiniteTransition.animateFloat(
         initialValue = 0.8f,
@@ -55,7 +54,6 @@ fun HomeScreen() {
         )
     )
 
-    // 权限请求
     val permissionLauncher = rememberLauncherForActivityResult(
         contract = ActivityResultContracts.RequestMultiplePermissions()
     ) { permissions ->
@@ -66,7 +64,6 @@ fun HomeScreen() {
         }
     }
 
-    // 检查权限
     LaunchedEffect(Unit) {
         val fine = ContextCompat.checkSelfPermission(
             context, Manifest.permission.ACCESS_FINE_LOCATION
@@ -89,7 +86,6 @@ fun HomeScreen() {
         }
     }
 
-    // 监听位置更新，自动保存到轨迹
     LaunchedEffect(state.location) {
         state.location?.let { location ->
             if (isRecording) {
@@ -105,7 +101,6 @@ fun HomeScreen() {
         horizontalAlignment = Alignment.CenterHorizontally,
         verticalArrangement = Arrangement.Top
     ) {
-        // 标题
         Text(
             text = "🏔️ 地质勘查工具箱",
             fontSize = 28.sp,
@@ -124,7 +119,6 @@ fun HomeScreen() {
 
         Spacer(modifier = Modifier.height(20.dp))
 
-        // 定位信息卡片
         GlassCard(
             modifier = Modifier.fillMaxWidth()
         ) {
@@ -133,7 +127,6 @@ fun HomeScreen() {
 
         Spacer(modifier = Modifier.height(12.dp))
 
-        // ⭐ 卫星状态卡片 - 添加点击事件展开详情
         GlassCard(
             modifier = Modifier
                 .fillMaxWidth()
@@ -148,7 +141,6 @@ fun HomeScreen() {
 
         Spacer(modifier = Modifier.height(12.dp))
 
-        // 轨迹记录状态
         GlassCard(
             modifier = Modifier.fillMaxWidth()
         ) {
@@ -176,7 +168,6 @@ fun HomeScreen() {
 
         Spacer(modifier = Modifier.height(12.dp))
 
-        // 操作按钮
         Row(
             modifier = Modifier.fillMaxWidth(),
             horizontalArrangement = Arrangement.spacedBy(12.dp)
@@ -213,22 +204,25 @@ fun HomeScreen() {
         )
     }
 
-    // ⭐ 卫星详情对话框
+    // ⭐ 修复：使用 Dialog 替代 AlertDialog
     if (showSatelliteDetail) {
-        AlertDialog(
-            onDismissRequest = { showSatelliteDetail = false },
-            modifier = Modifier
-                .fillMaxWidth()
-                .heightIn(max = 700.dp),
-            containerColor = Color(0xFFF8FAFC),
-            shape = RoundedCornerShape(24.dp),
-            content = {
+        Dialog(
+            onDismissRequest = { showSatelliteDetail = false }
+        ) {
+            Surface(
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .heightIn(max = 700.dp)
+                    .padding(16.dp),
+                shape = RoundedCornerShape(24.dp),
+                color = Color(0xFFF8FAFC)
+            ) {
                 SatelliteDetailScreen(
                     state = state,
                     onDismiss = { showSatelliteDetail = false }
                 )
             }
-        )
+        }
     }
 }
 
