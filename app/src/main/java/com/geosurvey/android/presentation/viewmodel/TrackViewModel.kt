@@ -11,6 +11,7 @@ import androidx.lifecycle.viewModelScope
 import com.geosurvey.android.GeoSurveyApplication
 import com.geosurvey.android.data.model.TrackPoint
 import com.geosurvey.android.data.repository.TrackRepository
+import com.geosurvey.android.utils.PrecisionOptimizer
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
@@ -30,12 +31,18 @@ class TrackViewModel(
             }
         }
 
+        // ⭐ 轨迹记录参数
+        private const val MIN_RECORD_DISTANCE = 6.0      // 每6米记录一个点
+        private const val MAX_JUMP_DISTANCE = 20.0       // 跳点检测阈值
         private const val MIN_ACCURACY = 15f
-        private const val MIN_DISTANCE = 2.0
+        private const val STATIC_DISTANCE_THRESHOLD = 1.0
+        private const val MAX_SPEED_THRESHOLD = 0.5
     }
 
     private val trackRepository: TrackRepository =
         (application as GeoSurveyApplication).trackRepository
+
+    private val precisionOptimizer = PrecisionOptimizer()
 
     private val _isRecording = MutableStateFlow(false)
     val isRecording: StateFlow<Boolean> = _isRecording.asStateFlow()
@@ -93,35 +100,61 @@ class TrackViewModel(
                 val filter = IntentFilter("LOCATION_UPDATE")
                 getApplication<GeoSurveyApplication>().registerReceiver(locationReceiver, filter)
                 isReceiverRegistered = true
-            } catch (e: Exception) {
-                // 可能已经注册
-            }
+            } catch (e: Exception) { }
         }
     }
 
     fun startRecording() {
         _isRecording.value = true
         lastLocation = null
+        precisionOptimizer.reset()
     }
 
     fun stopRecording() {
         _isRecording.value = false
     }
 
+    /**
+     * ⭐ 优化的轨迹点添加方法
+     * 包含：精度过滤、跳点检测、每6米记录、静止检测
+     */
     fun addTrackPoint(location: Location) {
         if (!_isRecording.value) return
 
+        // 1. 精度过滤
         if (location.accuracy != null && location.accuracy > MIN_ACCURACY) {
             return
         }
 
+        // 2. ⭐ 跳点检测：短时间内距离跳跃过大
         if (lastLocation != null) {
+            val timeDiff = location.time - lastLocation!!.time
             val distance = lastLocation!!.distanceTo(location)
-            if (distance < MIN_DISTANCE) {
+            
+            // 如果时间差小于3秒且距离超过20米，认为是跳点
+            if (timeDiff < 3000 && distance > MAX_JUMP_DISTANCE) {
+                // 记录但不生成轨迹点（仅更新最后位置）
+                lastLocation = location
+                return
+            }
+            
+            // 3. ⭐ 每6米记录一个点
+            if (distance < MIN_RECORD_DISTANCE) {
                 return
             }
         }
 
+        // 4. 静止检测
+        if (location.speed != null && location.speed < MAX_SPEED_THRESHOLD) {
+            if (lastLocation != null) {
+                val distance = lastLocation!!.distanceTo(location)
+                if (distance < STATIC_DISTANCE_THRESHOLD) {
+                    return
+                }
+            }
+        }
+
+        // 5. 保存轨迹点
         viewModelScope.launch {
             val point = TrackPoint(
                 latitude = location.latitude,
@@ -136,6 +169,7 @@ class TrackViewModel(
             lastLocation = location
             loadTrackPoints()
             loadAvailableDates()
+            _selectedDate.value?.let { filterByDate(it) }
         }
     }
 
@@ -207,8 +241,6 @@ class TrackViewModel(
                 getApplication<GeoSurveyApplication>().unregisterReceiver(locationReceiver)
                 isReceiverRegistered = false
             }
-        } catch (e: Exception) {
-            // ignore
-        }
+        } catch (e: Exception) { }
     }
 }
