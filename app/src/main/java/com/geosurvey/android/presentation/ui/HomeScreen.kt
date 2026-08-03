@@ -62,12 +62,12 @@ fun HomeScreen() {
         )
     )
 
-    // 修复传感器数据更新
+    // ⭐ 第73行已修复：使用 .toFloat() 转换
     LaunchedEffect(state.location) {
         state.location?.let { location ->
             val alt = location.altitude?.toFloat() ?: 0f
             val speed = location.speed?.let { it * 3.6 } ?: 0f
-            val snr = state.averageSnr
+            val snr = state.averageSnr.toFloat()  // ⭐ 第73行修复
             
             altitudeHistory.add(alt)
             speedHistory.add(speed)
@@ -121,7 +121,7 @@ fun HomeScreen() {
         }
     }
 
-    // ⭐ 添加垂直滚动
+    // 垂直滚动
     Column(
         modifier = Modifier
             .fillMaxSize()
@@ -143,7 +143,7 @@ fun HomeScreen() {
                 color = Color(0xFF0F172A),
                 modifier = Modifier.padding(top = 8.dp)
             )
-            // ⭐ 关于按钮
+            // 关于按钮
             TextButton(
                 onClick = { showAboutDialog = true },
                 modifier = Modifier.padding(top = 8.dp)
@@ -316,7 +316,7 @@ fun HomeScreen() {
         }
     }
 
-    // ⭐ 关于对话框
+    // 关于对话框
     if (showAboutDialog) {
         Dialog(
             onDismissRequest = { showAboutDialog = false }
