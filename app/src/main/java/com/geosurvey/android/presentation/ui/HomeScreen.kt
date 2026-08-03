@@ -7,7 +7,9 @@ import androidx.activity.result.contract.ActivityResultContracts
 import androidx.compose.animation.core.*
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.*
+import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.shape.RoundedCornerShape
+import androidx.compose.foundation.verticalScroll
 import androidx.compose.material3.*
 import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
@@ -44,6 +46,7 @@ fun HomeScreen() {
     val isRecording by trackViewModel.isRecording.collectAsState()
 
     var showSatelliteDetail by remember { mutableStateOf(false) }
+    var showAboutDialog by remember { mutableStateOf(false) }
 
     val altitudeHistory = remember { mutableStateListOf<Float>() }
     val speedHistory = remember { mutableStateListOf<Float>() }
@@ -59,13 +62,12 @@ fun HomeScreen() {
         )
     )
 
-    // ⭐ 简化：使用 0f 添加数据，构建通过后再优化
+    // 修复传感器数据更新
     LaunchedEffect(state.location) {
         state.location?.let { location ->
-            // 所有值都强制转为 Float
-            val alt = 0f
-            val speed = 0f
-            val snr = 0f
+            val alt = location.altitude?.toFloat() ?: 0f
+            val speed = location.speed?.let { it * 3.6 } ?: 0f
+            val snr = state.averageSnr
             
             altitudeHistory.add(alt)
             speedHistory.add(speed)
@@ -119,20 +121,36 @@ fun HomeScreen() {
         }
     }
 
+    // ⭐ 添加垂直滚动
     Column(
         modifier = Modifier
             .fillMaxSize()
+            .verticalScroll(rememberScrollState())
             .padding(16.dp),
         horizontalAlignment = Alignment.CenterHorizontally,
         verticalArrangement = Arrangement.Top
     ) {
-        Text(
-            text = "🏔️ 地质勘查工具箱",
-            fontSize = 28.sp,
-            fontWeight = FontWeight.Bold,
-            color = Color(0xFF0F172A),
-            modifier = Modifier.padding(top = 8.dp)
-        )
+        // 标题行 - 添加关于按钮
+        Row(
+            modifier = Modifier.fillMaxWidth(),
+            horizontalArrangement = Arrangement.SpaceBetween,
+            verticalAlignment = Alignment.CenterVertically
+        ) {
+            Text(
+                text = "🏔️ 地质勘查工具箱",
+                fontSize = 28.sp,
+                fontWeight = FontWeight.Bold,
+                color = Color(0xFF0F172A),
+                modifier = Modifier.padding(top = 8.dp)
+            )
+            // ⭐ 关于按钮
+            TextButton(
+                onClick = { showAboutDialog = true },
+                modifier = Modifier.padding(top = 8.dp)
+            ) {
+                Text("📋", fontSize = 20.sp)
+            }
+        }
 
         Spacer(modifier = Modifier.height(4.dp))
 
@@ -144,6 +162,7 @@ fun HomeScreen() {
 
         Spacer(modifier = Modifier.height(20.dp))
 
+        // 定位信息卡片
         GlassCard(
             modifier = Modifier.fillMaxWidth()
         ) {
@@ -152,6 +171,7 @@ fun HomeScreen() {
 
         Spacer(modifier = Modifier.height(12.dp))
 
+        // 卫星状态卡片
         GlassCard(
             modifier = Modifier
                 .fillMaxWidth()
@@ -166,6 +186,7 @@ fun HomeScreen() {
 
         Spacer(modifier = Modifier.height(12.dp))
 
+        // 轨迹记录状态
         GlassCard(
             modifier = Modifier.fillMaxWidth()
         ) {
@@ -193,6 +214,7 @@ fun HomeScreen() {
 
         Spacer(modifier = Modifier.height(12.dp))
 
+        // 操作按钮
         Row(
             modifier = Modifier.fillMaxWidth(),
             horizontalArrangement = Arrangement.spacedBy(12.dp)
@@ -222,6 +244,7 @@ fun HomeScreen() {
 
         Spacer(modifier = Modifier.height(12.dp))
 
+        // 传感器实时曲线
         Text(
             text = "📊 传感器实时曲线",
             fontSize = 16.sp,
@@ -267,8 +290,12 @@ fun HomeScreen() {
             fontSize = 12.sp,
             color = Color(0xFF94A3B8)
         )
+        
+        // 底部留白
+        Spacer(modifier = Modifier.height(80.dp))
     }
 
+    // 卫星详情对话框
     if (showSatelliteDetail) {
         Dialog(
             onDismissRequest = { showSatelliteDetail = false }
@@ -285,6 +312,24 @@ fun HomeScreen() {
                     state = state,
                     onDismiss = { showSatelliteDetail = false }
                 )
+            }
+        }
+    }
+
+    // ⭐ 关于对话框
+    if (showAboutDialog) {
+        Dialog(
+            onDismissRequest = { showAboutDialog = false }
+        ) {
+            Surface(
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .heightIn(max = 600.dp)
+                    .padding(8.dp),
+                shape = RoundedCornerShape(16.dp),
+                color = Color(0xFFF8FAFC)
+            ) {
+                AboutScreen(onBack = { showAboutDialog = false })
             }
         }
     }
