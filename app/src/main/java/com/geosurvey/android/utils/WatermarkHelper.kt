@@ -52,7 +52,7 @@ class WatermarkHelper(private val context: Context) {
             setShadowLayer(6f, 3f, 3f, Color.BLACK)
         }
 
-        // ⭐ 修复乱码：使用中文字体
+        // 修复中文字体
         try {
             val typeface = Typeface.create("sans-serif", Typeface.BOLD)
             paint.typeface = typeface
@@ -63,6 +63,7 @@ class WatermarkHelper(private val context: Context) {
         val lines = mutableListOf<String>()
         val sdf = SimpleDateFormat("yyyy-MM-dd HH:mm:ss", Locale.CHINA)
 
+        // ⭐ 只添加一次坐标
         if (config.showCoordinates) {
             lines.add("📍 ${String.format("%.6f", data.latitude)}, ${String.format("%.6f", data.longitude)}")
             data.altitude?.let {
@@ -70,7 +71,11 @@ class WatermarkHelper(private val context: Context) {
             }
         }
 
-        if (config.showLocation && data.locationName.isNotEmpty() && data.locationName != "获取位置失败" && data.locationName != "无网络连接") {
+        // ⭐ 位置名称（省市县乡镇村）
+        if (config.showLocation && data.locationName.isNotEmpty() && 
+            !data.locationName.contains("失败") && 
+            !data.locationName.contains("无网络") &&
+            !data.locationName.contains("Timeout")) {
             lines.add("📍 ${data.locationName}")
         }
 
@@ -86,6 +91,7 @@ class WatermarkHelper(private val context: Context) {
             lines.add("📝 ${data.note}")
         }
 
+        // 如果没有内容，显示默认坐标
         if (lines.isEmpty()) {
             lines.add("📍 ${String.format("%.6f", data.latitude)}, ${String.format("%.6f", data.longitude)}")
         }
@@ -124,6 +130,7 @@ class WatermarkHelper(private val context: Context) {
             style = Paint.Style.FILL
         })
 
+        // 绘制每行文字
         lines.forEach { line ->
             val x = when (config.position) {
                 Position.TOP_LEFT, Position.BOTTOM_LEFT -> startX
