@@ -1,12 +1,10 @@
 package com.geosurvey.android.utils
 
-import android.content.Context
 import android.os.Build
-import android.os.SystemProperties
-import java.lang.reflect.Method
 
 /**
  * 鸿蒙系统检测工具
+ * 使用反射避免编译依赖
  */
 object HarmonyOSDetector {
 
@@ -16,7 +14,7 @@ object HarmonyOSDetector {
     /**
      * 检测是否为鸿蒙系统
      */
-    fun isHarmonyOS(context: Context? = null): Boolean {
+    fun isHarmonyOS(): Boolean {
         if (isHarmonyOS != null) {
             return isHarmonyOS!!
         }
@@ -34,37 +32,23 @@ object HarmonyOSDetector {
                 return true
             }
 
-            // 方法3: 通过厂商检测（华为设备）
+            // 方法3: 通过厂商检测
             val manufacturer = Build.MANUFACTURER
             val brand = Build.BRAND
             if (manufacturer.equals("huawei", ignoreCase = true) ||
                 brand.equals("huawei", ignoreCase = true)) {
-                // 华为设备，进一步检测
+                
+                // 华为设备，检查系统属性
                 try {
-                    val cls = Class.forName("com.huawei.system.BuildEx")
-                    val getOsType = cls.getDeclaredMethod("getOsType")
-                    val osType = getOsType.invoke(null) as? String
-                    if (osType != null && osType.contains("HarmonyOS", ignoreCase = true)) {
+                    val version = getSystemProperty("ro.build.version.harmonyos")
+                    if (!version.isNullOrEmpty()) {
                         isHarmonyOS = true
+                        harmonyVersion = version
                         return true
                     }
                 } catch (e: Exception) {
-                    // 没有鸿蒙API
+                    // 没有该属性
                 }
-            }
-
-            // 方法4: 通过系统属性检测
-            try {
-                val get = Class.forName("android.os.SystemProperties")
-                    .getDeclaredMethod("get", String::class.java)
-                val version = get.invoke(null, "ro.build.version.harmonyos") as? String
-                if (!version.isNullOrEmpty()) {
-                    isHarmonyOS = true
-                    harmonyVersion = version
-                    return true
-                }
-            } catch (e: Exception) {
-                // 没有该属性
             }
 
             isHarmonyOS = false
@@ -81,9 +65,10 @@ object HarmonyOSDetector {
     fun getHarmonyVersion(): String? {
         if (harmonyVersion == null) {
             try {
-                val get = Class.forName("android.os.SystemProperties")
-                    .getDeclaredMethod("get", String::class.java)
-                harmonyVersion = get.invoke(null, "ro.build.version.harmonyos") as? String
+                harmonyVersion = getSystemProperty("ro.build.version.harmonyos")
+                if (harmonyVersion.isNullOrEmpty()) {
+                    harmonyVersion = "未知"
+                }
             } catch (e: Exception) {
                 harmonyVersion = "未知"
             }
@@ -92,16 +77,15 @@ object HarmonyOSDetector {
     }
 
     /**
-     * 是否为纯鸿蒙应用环境（非兼容模式）
+     * 反射获取系统属性
      */
-    fun isPureHarmony(): Boolean {
+    private fun getSystemProperty(key: String): String? {
         return try {
-            val cls = Class.forName("com.huawei.system.BuildEx")
-            val getOsType = cls.getDeclaredMethod("getOsType")
-            val osType = getOsType.invoke(null) as? String
-            osType != null && osType.equals("HarmonyOS", ignoreCase = true)
+            val clazz = Class.forName("android.os.SystemProperties")
+            val method = clazz.getMethod("get", String::class.java)
+            method.invoke(null, key) as? String
         } catch (e: Exception) {
-            false
+            null
         }
     }
 }
