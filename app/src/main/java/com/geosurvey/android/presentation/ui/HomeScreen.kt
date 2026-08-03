@@ -45,7 +45,7 @@ fun HomeScreen() {
 
     var showSatelliteDetail by remember { mutableStateOf(false) }
 
-    // 传感器历史数据 - 使用 mutableStateListOf 避免类型问题
+    // ⭐ 第71行：使用 mutableStateListOf 存储 Float 类型
     val altitudeHistory = remember { mutableStateListOf<Float>() }
     val speedHistory = remember { mutableStateListOf<Float>() }
     val snrHistory = remember { mutableStateListOf<Float>() }
@@ -67,10 +67,12 @@ fun HomeScreen() {
             val speed = location.speed?.let { it * 3.6 } ?: 0f
             val snr = state.averageSnr
             
+            // 添加数据
             altitudeHistory.add(alt)
             speedHistory.add(speed)
             snrHistory.add(snr)
             
+            // 保持最多50个数据点
             if (altitudeHistory.size > 50) {
                 altitudeHistory.removeAt(0)
                 speedHistory.removeAt(0)
