@@ -18,6 +18,7 @@ import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
+import androidx.compose.ui.window.Dialog
 import androidx.core.content.ContextCompat
 import androidx.lifecycle.viewmodel.compose.viewModel
 import com.geosurvey.android.GeoSurveyApplication
@@ -204,7 +205,6 @@ fun HomeScreen() {
         )
     }
 
-    // ⭐ 修复：使用 Dialog 替代 AlertDialog
     if (showSatelliteDetail) {
         Dialog(
             onDismissRequest = { showSatelliteDetail = false }
