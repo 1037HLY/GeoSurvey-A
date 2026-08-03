@@ -26,6 +26,7 @@ import com.geosurvey.android.presentation.ui.components.GlassCard
 import com.geosurvey.android.presentation.viewmodel.CoordinateState
 import com.geosurvey.android.presentation.viewmodel.CoordinateViewModel
 import com.geosurvey.android.utils.CoordinateConverter
+import com.geosurvey.android.utils.GaussProjection
 import com.google.android.gms.location.FusedLocationProviderClient
 import com.google.android.gms.location.LocationCallback
 import com.google.android.gms.location.LocationRequest
@@ -48,6 +49,22 @@ fun CoordinateScreen() {
     var location by remember { mutableStateOf<Location?>(null) }
     var showToast by remember { mutableStateOf(false) }
     var toastMessage by remember { mutableStateOf("") }
+
+    // 投影参数对话框
+    var showProjectionDialog by remember { mutableStateOf(false) }
+    var tempZone by remember { mutableStateOf("") }
+    var tempCentralMeridian by remember { mutableStateOf("") }
+
+    // 转换方向选择
+    enum class ConvertDirection {
+        LATLON_TO_GAUSS,  // 经纬度→高斯投影
+        GAUSS_TO_LATLON   // 高斯投影→经纬度
+    }
+    var convertDirection by remember { mutableStateOf(ConvertDirection.LATLON_TO_GAUSS) }
+
+    // 高斯输入
+    var gaussInputX by remember { mutableStateOf("") }
+    var gaussInputY by remember { mutableStateOf("") }
 
     val locationCallback = remember {
         object : LocationCallback() {
@@ -87,6 +104,60 @@ fun CoordinateScreen() {
         }
     }
 
+    // 应用投影参数
+    fun applyProjectionParams() {
+        val zone = tempZone.toIntOrNull()
+        val cm = tempCentralMeridian.toDoubleOrNull()
+        if (zone != null && cm != null) {
+            viewModel.updateCustomZone(tempZone)
+            viewModel.updateCustomCentralMeridian(tempCentralMeridian)
+            viewModel.toggleUseCustomProjection()
+            showProjectionDialog = false
+            toastMessage = "✅ 已应用自定义参数"
+            showToast = true
+        } else {
+            toastMessage = "⚠️ 请输入有效参数"
+            showToast = true
+        }
+    }
+
+    // 执行高斯转换
+    fun performGaussConversion() {
+        if (convertDirection == ConvertDirection.LATLON_TO_GAUSS) {
+            // 经纬度→高斯投影
+            val lat = state.inputLat.toDoubleOrNull()
+            val lon = state.inputLon.toDoubleOrNull()
+            if (lat == null || lon == null) {
+                toastMessage = "⚠️ 请输入有效经纬度"
+                showToast = true
+                return
+            }
+            val gaussCoord = GaussProjection.blhToGauss(lat, lon)
+            viewModel.updateGaussResult(gaussCoord)
+            toastMessage = "✅ 转换完成"
+            showToast = true
+        } else {
+            // 高斯投影→经纬度
+            val x = gaussInputX.toDoubleOrNull()
+            val y = gaussInputY.toDoubleOrNull()
+            if (x == null || y == null) {
+                toastMessage = "⚠️ 请输入有效高斯坐标"
+                showToast = true
+                return
+            }
+            try {
+                val zone = state.customZone.toIntOrNull() ?: 18
+                val coord = GaussProjection.gaussToBlh(x, y, zone)
+                viewModel.updateWgs84Result(coord)
+                toastMessage = "✅ 转换完成"
+                showToast = true
+            } catch (e: Exception) {
+                toastMessage = "⚠️ 转换失败: ${e.message}"
+                showToast = true
+            }
+        }
+    }
+
     Column(
         modifier = Modifier
             .fillMaxSize()
@@ -102,7 +173,7 @@ fun CoordinateScreen() {
 
         Spacer(modifier = Modifier.height(12.dp))
 
-        // 当前坐标卡片
+        // ========== 当前坐标卡片 ==========
         GlassCard(
             modifier = Modifier.fillMaxWidth()
         ) {
@@ -142,7 +213,7 @@ fun CoordinateScreen() {
                     )
                 }
 
-                // 自定义参数设置
+                // ========== 投影参数设置（按钮方式） ==========
                 Spacer(modifier = Modifier.height(12.dp))
 
                 Divider(
@@ -150,99 +221,69 @@ fun CoordinateScreen() {
                     modifier = Modifier.padding(vertical = 4.dp)
                 )
 
-                Text(
-                    text = "⚙️ 高斯投影参数",
-                    fontSize = 14.sp,
-                    fontWeight = FontWeight.SemiBold,
-                    color = Color(0xFF0F172A)
-                )
-
-                Spacer(modifier = Modifier.height(8.dp))
-
-                // 自动/自定义切换
                 Row(
                     modifier = Modifier.fillMaxWidth(),
+                    horizontalArrangement = Arrangement.SpaceBetween,
                     verticalAlignment = Alignment.CenterVertically
                 ) {
-                    Switch(
-                        checked = state.useCustomProjection,
-                        onCheckedChange = {
-                            viewModel.toggleUseCustomProjection()
-                        },
-                        colors = SwitchDefaults.colors(
-                            checkedThumbColor = PrimaryBlue,
-                            checkedTrackColor = PrimaryBlue.copy(alpha = 0.5f),
-                            uncheckedThumbColor = Color(0xFF94A3B8),
-                            uncheckedTrackColor = Color(0xFFE2E8F0)
-                        )
+                    Text(
+                        text = "⚙️ 投影参数",
+                        fontSize = 14.sp,
+                        fontWeight = FontWeight.SemiBold,
+                        color = Color(0xFF0F172A)
                     )
                     Text(
-                        text = if (state.useCustomProjection) "🔧 自定义参数" else "⚡ 自动计算",
-                        fontSize = 14.sp,
-                        fontWeight = if (state.useCustomProjection) FontWeight.SemiBold else FontWeight.Normal,
-                        color = if (state.useCustomProjection) PrimaryBlue else Color(0xFF475569)
+                        text = if (state.useCustomProjection) "🔧 自定义" else "⚡ 自动",
+                        fontSize = 12.sp,
+                        color = if (state.useCustomProjection) PrimaryBlue else Color(0xFF94A3B8)
                     )
                 }
 
-                // 自定义参数输入
-                if (state.useCustomProjection) {
-                    Spacer(modifier = Modifier.height(8.dp))
+                Spacer(modifier = Modifier.height(8.dp))
 
-                    Row(
-                        modifier = Modifier.fillMaxWidth(),
-                        horizontalArrangement = Arrangement.spacedBy(8.dp)
+                Row(
+                    modifier = Modifier.fillMaxWidth(),
+                    horizontalArrangement = Arrangement.spacedBy(8.dp)
+                ) {
+                    Button(
+                        onClick = {
+                            tempZone = state.customZone
+                            tempCentralMeridian = state.customCentralMeridian
+                            showProjectionDialog = true
+                        },
+                        modifier = Modifier.weight(1f),
+                        colors = ButtonDefaults.buttonColors(
+                            containerColor = PrimaryBlue
+                        ),
+                        shape = RoundedCornerShape(8.dp)
                     ) {
-                        OutlinedTextField(
-                            value = state.customZone,
-                            onValueChange = { viewModel.updateCustomZone(it) },
-                            label = { Text("带号") },
-                            modifier = Modifier.weight(1f),
-                            shape = RoundedCornerShape(8.dp),
-                            singleLine = true,
-                            placeholder = { Text("例如: 18", fontSize = 12.sp) }
-                        )
-                        OutlinedTextField(
-                            value = state.customCentralMeridian,
-                            onValueChange = { viewModel.updateCustomCentralMeridian(it) },
-                            label = { Text("中央子午线 (°)") },
-                            modifier = Modifier.weight(1f),
-                            shape = RoundedCornerShape(8.dp),
-                            singleLine = true,
-                            placeholder = { Text("例如: 105", fontSize = 12.sp) }
-                        )
+                        Text("📐 设置参数")
                     }
-
-                    Row(
-                        modifier = Modifier.fillMaxWidth(),
-                        horizontalArrangement = Arrangement.spacedBy(8.dp)
-                    ) {
-                        Button(
-                            onClick = { viewModel.calculateWithCustomParams() },
-                            modifier = Modifier.weight(1f),
-                            colors = ButtonDefaults.buttonColors(
-                                containerColor = PrimaryBlue
-                            ),
-                            shape = RoundedCornerShape(8.dp)
-                        ) {
-                            Text("🔄 应用")
-                        }
+                    if (state.useCustomProjection) {
                         Button(
                             onClick = {
-                                viewModel.updateCustomZone("")
-                                viewModel.updateCustomCentralMeridian("")
-                                if (state.useCustomProjection) {
-                                    viewModel.toggleUseCustomProjection()
-                                }
+                                viewModel.toggleUseCustomProjection()
+                                toastMessage = "✅ 已切换为自动计算"
+                                showToast = true
                             },
                             modifier = Modifier.weight(1f),
                             colors = ButtonDefaults.buttonColors(
-                                containerColor = Color(0xFF94A3B8)
+                                containerColor = AccentOrange
                             ),
                             shape = RoundedCornerShape(8.dp)
                         ) {
-                            Text("重置")
+                            Text("重置自动")
                         }
                     }
+                }
+
+                if (state.useCustomProjection) {
+                    Text(
+                        text = "当前: 带号=${state.customZone}, 中央子午线=${state.customCentralMeridian}°",
+                        fontSize = 11.sp,
+                        color = PrimaryBlue,
+                        modifier = Modifier.padding(top = 4.dp)
+                    )
                 }
             } else {
                 Text(
@@ -255,7 +296,7 @@ fun CoordinateScreen() {
 
         Spacer(modifier = Modifier.height(12.dp))
 
-        // 手动输入转换
+        // ========== 手动输入转换 ==========
         GlassCard(
             modifier = Modifier.fillMaxWidth()
         ) {
@@ -267,99 +308,185 @@ fun CoordinateScreen() {
             )
             Spacer(modifier = Modifier.height(8.dp))
 
+            // 转换方向选择
             Row(
                 modifier = Modifier.fillMaxWidth(),
                 horizontalArrangement = Arrangement.spacedBy(8.dp)
             ) {
-                OutlinedTextField(
-                    value = state.inputLat,
-                    onValueChange = { viewModel.updateInputLat(it) },
-                    label = { Text("纬度") },
-                    modifier = Modifier.weight(1f),
-                    shape = RoundedCornerShape(8.dp),
-                    singleLine = true
+                FilterChip(
+                    selected = convertDirection == ConvertDirection.LATLON_TO_GAUSS,
+                    onClick = { convertDirection = ConvertDirection.LATLON_TO_GAUSS },
+                    label = { Text("经纬→高斯", fontSize = 12.sp) },
+                    modifier = Modifier.weight(1f)
                 )
-                OutlinedTextField(
-                    value = state.inputLon,
-                    onValueChange = { viewModel.updateInputLon(it) },
-                    label = { Text("经度") },
-                    modifier = Modifier.weight(1f),
-                    shape = RoundedCornerShape(8.dp),
-                    singleLine = true
+                FilterChip(
+                    selected = convertDirection == ConvertDirection.GAUSS_TO_LATLON,
+                    onClick = { convertDirection = ConvertDirection.GAUSS_TO_LATLON },
+                    label = { Text("高斯→经纬", fontSize = 12.sp) },
+                    modifier = Modifier.weight(1f)
                 )
-            }
-
-            Row(
-                modifier = Modifier.fillMaxWidth(),
-                horizontalArrangement = Arrangement.spacedBy(8.dp)
-            ) {
-                OutlinedTextField(
-                    value = state.inputAlt,
-                    onValueChange = { viewModel.updateInputAlt(it) },
-                    label = { Text("海拔 (m)") },
-                    modifier = Modifier.weight(1f),
-                    shape = RoundedCornerShape(8.dp),
-                    singleLine = true
-                )
-                // 系统选择
-                var expanded by remember { mutableStateOf(false) }
-                Box(modifier = Modifier.weight(1f)) {
-                    OutlinedButton(
-                        onClick = { expanded = true },
-                        modifier = Modifier.fillMaxWidth()
-                    ) {
-                        Text(CoordinateConverter.getSystemName(state.selectedSystem))
-                    }
-                    DropdownMenu(
-                        expanded = expanded,
-                        onDismissRequest = { expanded = false }
-                    ) {
-                        CoordinateConverter.CoordinateSystem.values().forEach { system ->
-                            DropdownMenuItem(
-                                text = { Text(CoordinateConverter.getSystemName(system)) },
-                                onClick = {
-                                    viewModel.selectSystem(system)
-                                    expanded = false
-                                }
-                            )
-                        }
-                    }
-                }
             }
 
             Spacer(modifier = Modifier.height(8.dp))
 
-            Button(
-                onClick = {
-                    viewModel.convertInput(
-                        state.inputLat,
-                        state.inputLon,
-                        state.inputAlt,
-                        state.selectedSystem
+            if (convertDirection == ConvertDirection.LATLON_TO_GAUSS) {
+                // 经纬度→高斯投影
+                Row(
+                    modifier = Modifier.fillMaxWidth(),
+                    horizontalArrangement = Arrangement.spacedBy(8.dp)
+                ) {
+                    OutlinedTextField(
+                        value = state.inputLat,
+                        onValueChange = { viewModel.updateInputLat(it) },
+                        label = { Text("纬度") },
+                        modifier = Modifier.weight(1f),
+                        shape = RoundedCornerShape(8.dp),
+                        singleLine = true,
+                        placeholder = { Text("如: 27.0434", fontSize = 12.sp) }
                     )
-                },
-                modifier = Modifier.fillMaxWidth(),
-                colors = ButtonDefaults.buttonColors(
-                    containerColor = PrimaryBlue
-                ),
-                shape = RoundedCornerShape(12.dp)
-            ) {
-                Text("🔄 转换")
-            }
+                    OutlinedTextField(
+                        value = state.inputLon,
+                        onValueChange = { viewModel.updateInputLon(it) },
+                        label = { Text("经度") },
+                        modifier = Modifier.weight(1f),
+                        shape = RoundedCornerShape(8.dp),
+                        singleLine = true,
+                        placeholder = { Text("如: 102.6660", fontSize = 12.sp) }
+                    )
+                }
 
-            if (state.wgs84 != null && state.wgs84!!.latitude != 0.0) {
+                Row(
+                    modifier = Modifier.fillMaxWidth(),
+                    horizontalArrangement = Arrangement.spacedBy(8.dp)
+                ) {
+                    OutlinedTextField(
+                        value = state.inputAlt,
+                        onValueChange = { viewModel.updateInputAlt(it) },
+                        label = { Text("海拔 (m)") },
+                        modifier = Modifier.weight(1f),
+                        shape = RoundedCornerShape(8.dp),
+                        singleLine = true,
+                        placeholder = { Text("可选", fontSize = 12.sp) }
+                    )
+                    // 系统选择
+                    var expanded by remember { mutableStateOf(false) }
+                    Box(modifier = Modifier.weight(1f)) {
+                        OutlinedButton(
+                            onClick = { expanded = true },
+                            modifier = Modifier.fillMaxWidth()
+                        ) {
+                            Text(CoordinateConverter.getSystemName(state.selectedSystem))
+                        }
+                        DropdownMenu(
+                            expanded = expanded,
+                            onDismissRequest = { expanded = false }
+                        ) {
+                            CoordinateConverter.CoordinateSystem.values().forEach { system ->
+                                DropdownMenuItem(
+                                    text = { Text(CoordinateConverter.getSystemName(system)) },
+                                    onClick = {
+                                        viewModel.selectSystem(system)
+                                        expanded = false
+                                    }
+                                )
+                            }
+                        }
+                    }
+                }
+
                 Spacer(modifier = Modifier.height(8.dp))
-                Text(
-                    text = "WGS84: ${CoordinateConverter.formatCoordinate(state.wgs84!!.latitude, state.wgs84!!.longitude)}",
-                    fontSize = 12.sp,
-                    color = Color(0xFF475569)
+
+                Button(
+                    onClick = {
+                        viewModel.convertInput(
+                            state.inputLat,
+                            state.inputLon,
+                            state.inputAlt,
+                            state.selectedSystem
+                        )
+                    },
+                    modifier = Modifier.fillMaxWidth(),
+                    colors = ButtonDefaults.buttonColors(
+                        containerColor = PrimaryBlue
+                    ),
+                    shape = RoundedCornerShape(12.dp)
+                ) {
+                    Text("🔄 转换")
+                }
+
+                if (state.wgs84 != null && state.wgs84!!.latitude != 0.0) {
+                    Spacer(modifier = Modifier.height(8.dp))
+                    Text(
+                        text = "WGS84: ${CoordinateConverter.formatCoordinate(state.wgs84!!.latitude, state.wgs84!!.longitude)}",
+                        fontSize = 12.sp,
+                        color = Color(0xFF475569)
+                    )
+                }
+            } else {
+                // 高斯投影→经纬度
+                Row(
+                    modifier = Modifier.fillMaxWidth(),
+                    horizontalArrangement = Arrangement.spacedBy(8.dp)
+                ) {
+                    OutlinedTextField(
+                        value = gaussInputX,
+                        onValueChange = { gaussInputX = it },
+                        label = { Text("X (北坐标)") },
+                        modifier = Modifier.weight(1f),
+                        shape = RoundedCornerShape(8.dp),
+                        singleLine = true,
+                        placeholder = { Text("如: 2999122.39", fontSize = 12.sp) }
+                    )
+                    OutlinedTextField(
+                        value = gaussInputY,
+                        onValueChange = { gaussInputY = it },
+                        label = { Text("Y (东坐标)") },
+                        modifier = Modifier.weight(1f),
+                        shape = RoundedCornerShape(8.dp),
+                        singleLine = true,
+                        placeholder = { Text("如: 908592.03", fontSize = 12.sp) }
+                    )
+                }
+
+                // 带号输入
+                OutlinedTextField(
+                    value = state.customZone,
+                    onValueChange = { viewModel.updateCustomZone(it) },
+                    label = { Text("带号") },
+                    modifier = Modifier.fillMaxWidth(),
+                    shape = RoundedCornerShape(8.dp),
+                    singleLine = true,
+                    placeholder = { Text("如: 18", fontSize = 12.sp) }
                 )
+
+                Spacer(modifier = Modifier.height(8.dp))
+
+                Button(
+                    onClick = { performGaussConversion() },
+                    modifier = Modifier.fillMaxWidth(),
+                    colors = ButtonDefaults.buttonColors(
+                        containerColor = AccentPurple
+                    ),
+                    shape = RoundedCornerShape(12.dp)
+                ) {
+                    Text("🔄 转换")
+                }
+
+                // 显示转换结果
+                if (state.wgs84 != null && state.wgs84!!.latitude != 0.0) {
+                    Spacer(modifier = Modifier.height(8.dp))
+                    Text(
+                        text = "经纬度: ${CoordinateConverter.formatCoordinate(state.wgs84!!.latitude, state.wgs84!!.longitude)}",
+                        fontSize = 12.sp,
+                        color = AccentPurple
+                    )
+                }
             }
         }
 
         Spacer(modifier = Modifier.height(12.dp))
 
-        // ⭐ 备注和保存（修复显示问题）
+        // ========== 记录信息 ==========
         GlassCard(
             modifier = Modifier.fillMaxWidth()
         ) {
@@ -371,7 +498,6 @@ fun CoordinateScreen() {
             )
             Spacer(modifier = Modifier.height(8.dp))
 
-            // 地点名称
             OutlinedTextField(
                 value = state.locationName,
                 onValueChange = { viewModel.updateLocationName(it) },
@@ -386,7 +512,6 @@ fun CoordinateScreen() {
 
             Spacer(modifier = Modifier.height(8.dp))
 
-            // ⭐ 备注（增加高度和行数）
             OutlinedTextField(
                 value = state.note,
                 onValueChange = { viewModel.updateNote(it) },
@@ -401,7 +526,6 @@ fun CoordinateScreen() {
 
             Spacer(modifier = Modifier.height(8.dp))
 
-            // 说明文字
             Text(
                 text = "💡 地点名称和备注会随坐标一起保存",
                 fontSize = 11.sp,
@@ -445,7 +569,7 @@ fun CoordinateScreen() {
 
         Spacer(modifier = Modifier.height(12.dp))
 
-        // 历史记录
+        // ========== 历史记录 ==========
         Text(
             text = "📋 历史记录 (${state.recordCount})",
             fontSize = 16.sp,
@@ -478,6 +602,64 @@ fun CoordinateScreen() {
         }
     }
 
+    // ========== 投影参数设置对话框 ==========
+    if (showProjectionDialog) {
+        AlertDialog(
+            onDismissRequest = { showProjectionDialog = false },
+            title = { Text("📐 设置投影参数") },
+            text = {
+                Column {
+                    Text(
+                        text = "输入自定义带号和中央子午线",
+                        fontSize = 13.sp,
+                        color = Color(0xFF475569)
+                    )
+                    Spacer(modifier = Modifier.height(12.dp))
+                    OutlinedTextField(
+                        value = tempZone,
+                        onValueChange = { tempZone = it },
+                        label = { Text("带号") },
+                        modifier = Modifier.fillMaxWidth(),
+                        shape = RoundedCornerShape(8.dp),
+                        singleLine = true,
+                        placeholder = { Text("如: 18", fontSize = 12.sp) }
+                    )
+                    Spacer(modifier = Modifier.height(8.dp))
+                    OutlinedTextField(
+                        value = tempCentralMeridian,
+                        onValueChange = { tempCentralMeridian = it },
+                        label = { Text("中央子午线 (°)") },
+                        modifier = Modifier.fillMaxWidth(),
+                        shape = RoundedCornerShape(8.dp),
+                        singleLine = true,
+                        placeholder = { Text("如: 105", fontSize = 12.sp) }
+                    )
+                    Spacer(modifier = Modifier.height(8.dp))
+                    Text(
+                        text = "💡 6度带: 带号×6-3 = 中央子午线",
+                        fontSize = 11.sp,
+                        color = Color(0xFF94A3B8)
+                    )
+                    Text(
+                        text = "💡 3度带: 带号×3 = 中央子午线",
+                        fontSize = 11.sp,
+                        color = Color(0xFF94A3B8)
+                    )
+                }
+            },
+            confirmButton = {
+                TextButton(onClick = { applyProjectionParams() }) {
+                    Text("应用", color = PrimaryBlue)
+                }
+            },
+            dismissButton = {
+                TextButton(onClick = { showProjectionDialog = false }) {
+                    Text("取消")
+                }
+            }
+        )
+    }
+
     if (showToast) {
         LaunchedEffect(Unit) {
             kotlinx.coroutines.delay(2500)
@@ -485,7 +667,11 @@ fun CoordinateScreen() {
         }
         Snackbar(
             modifier = Modifier.padding(16.dp),
-            containerColor = SecondaryGreen
+            containerColor = when {
+                toastMessage.contains("✅") -> SecondaryGreen
+                toastMessage.contains("⚠️") -> AccentOrange
+                else -> SecondaryGreen
+            }
         ) {
             Text(toastMessage, color = Color.White)
         }
