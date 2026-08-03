@@ -45,6 +45,11 @@ fun HomeScreen() {
 
     var showSatelliteDetail by remember { mutableStateOf(false) }
 
+    // 传感器历史数据
+    var altitudeHistory by remember { mutableStateOf<List<Float>>(emptyList()) }
+    var speedHistory by remember { mutableStateOf<List<Float>>(emptyList()) }
+    var snrHistory by remember { mutableStateOf<List<Float>>(emptyList()) }
+
     val infiniteTransition = rememberInfiniteTransition()
     val pulse by infiniteTransition.animateFloat(
         initialValue = 0.8f,
@@ -54,6 +59,19 @@ fun HomeScreen() {
             repeatMode = RepeatMode.Reverse
         )
     )
+
+    // 监听位置更新，更新历史数据
+    LaunchedEffect(state.location) {
+        state.location?.let { location ->
+            val alt = location.altitude?.toFloat() ?: 0f
+            val speed = location.speed?.let { it * 3.6 } ?: 0f
+            val snr = state.averageSnr
+            
+            altitudeHistory = (altitudeHistory + alt).takeLast(50)
+            speedHistory = (speedHistory + speed).takeLast(50)
+            snrHistory = (snrHistory + snr).takeLast(50)
+        }
+    }
 
     val permissionLauncher = rememberLauncherForActivityResult(
         contract = ActivityResultContracts.RequestMultiplePermissions()
@@ -120,6 +138,7 @@ fun HomeScreen() {
 
         Spacer(modifier = Modifier.height(20.dp))
 
+        // 定位信息卡片
         GlassCard(
             modifier = Modifier.fillMaxWidth()
         ) {
@@ -128,6 +147,7 @@ fun HomeScreen() {
 
         Spacer(modifier = Modifier.height(12.dp))
 
+        // 卫星状态卡片 - 点击展开全屏
         GlassCard(
             modifier = Modifier
                 .fillMaxWidth()
@@ -142,6 +162,7 @@ fun HomeScreen() {
 
         Spacer(modifier = Modifier.height(12.dp))
 
+        // 轨迹记录状态
         GlassCard(
             modifier = Modifier.fillMaxWidth()
         ) {
@@ -169,6 +190,7 @@ fun HomeScreen() {
 
         Spacer(modifier = Modifier.height(12.dp))
 
+        // 操作按钮
         Row(
             modifier = Modifier.fillMaxWidth(),
             horizontalArrangement = Arrangement.spacedBy(12.dp)
@@ -198,6 +220,47 @@ fun HomeScreen() {
 
         Spacer(modifier = Modifier.height(12.dp))
 
+        // ⭐ 传感器实时曲线
+        Text(
+            text = "📊 传感器实时曲线",
+            fontSize = 16.sp,
+            fontWeight = FontWeight.SemiBold,
+            color = Color(0xFF0F172A),
+            modifier = Modifier.padding(top = 4.dp)
+        )
+
+        Spacer(modifier = Modifier.height(8.dp))
+
+        SensorChart(
+            title = "海拔",
+            data = altitudeHistory,
+            color = Color(0xFF0EA5E9),
+            unit = "m",
+            maxValue = 2000f
+        )
+
+        Spacer(modifier = Modifier.height(6.dp))
+
+        SensorChart(
+            title = "速度",
+            data = speedHistory,
+            color = Color(0xFF10B981),
+            unit = "km/h",
+            maxValue = 50f
+        )
+
+        Spacer(modifier = Modifier.height(6.dp))
+
+        SensorChart(
+            title = "信噪比",
+            data = snrHistory,
+            color = Color(0xFF8B5CF6),
+            unit = "dBHz",
+            maxValue = 50f
+        )
+
+        Spacer(modifier = Modifier.height(12.dp))
+
         Text(
             text = "🔧 开发中... 请等待后续版本",
             fontSize = 12.sp,
@@ -205,23 +268,16 @@ fun HomeScreen() {
         )
     }
 
+    // ⭐ 全屏卫星详情对话框
     if (showSatelliteDetail) {
         Dialog(
-            onDismissRequest = { showSatelliteDetail = false }
+            onDismissRequest = { showSatelliteDetail = false },
+            usePlatformDefaultWidth = false
         ) {
-            Surface(
-                modifier = Modifier
-                    .fillMaxWidth()
-                    .heightIn(max = 700.dp)
-                    .padding(16.dp),
-                shape = RoundedCornerShape(24.dp),
-                color = Color(0xFFF8FAFC)
-            ) {
-                SatelliteDetailScreen(
-                    state = state,
-                    onDismiss = { showSatelliteDetail = false }
-                )
-            }
+            SatelliteFullScreen(
+                state = state,
+                onDismiss = { showSatelliteDetail = false }
+            )
         }
     }
 }
@@ -332,7 +388,7 @@ fun SatelliteStatusContent(state: LocationState) {
             color = AccentPurple
         )
         Text(
-            text = if (state.satelliteCount > 0) "点击查看详情 →" else state.qualityText,
+            text = if (state.satelliteCount > 0) "点击查看全屏 →" else state.qualityText,
             fontSize = 12.sp,
             color = if (state.satelliteCount > 0) PrimaryBlue else Color(0xFF94A3B8)
         )
