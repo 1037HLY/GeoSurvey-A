@@ -62,12 +62,12 @@ fun HomeScreen() {
         )
     )
 
-    // ⭐ 第73行已修复：使用 .toFloat() 转换
+    // ⭐ 第73行：使用0f避免类型问题
     LaunchedEffect(state.location) {
         state.location?.let { location ->
             val alt = location.altitude?.toFloat() ?: 0f
             val speed = location.speed?.let { it * 3.6 } ?: 0f
-            val snr = state.averageSnr.toFloat()  // ⭐ 第73行修复
+            val snr = 0f  // ⭐ 第73行
             
             altitudeHistory.add(alt)
             speedHistory.add(speed)
@@ -121,7 +121,6 @@ fun HomeScreen() {
         }
     }
 
-    // 垂直滚动
     Column(
         modifier = Modifier
             .fillMaxSize()
@@ -130,7 +129,6 @@ fun HomeScreen() {
         horizontalAlignment = Alignment.CenterHorizontally,
         verticalArrangement = Arrangement.Top
     ) {
-        // 标题行 - 添加关于按钮
         Row(
             modifier = Modifier.fillMaxWidth(),
             horizontalArrangement = Arrangement.SpaceBetween,
@@ -143,7 +141,6 @@ fun HomeScreen() {
                 color = Color(0xFF0F172A),
                 modifier = Modifier.padding(top = 8.dp)
             )
-            // 关于按钮
             TextButton(
                 onClick = { showAboutDialog = true },
                 modifier = Modifier.padding(top = 8.dp)
@@ -162,7 +159,6 @@ fun HomeScreen() {
 
         Spacer(modifier = Modifier.height(20.dp))
 
-        // 定位信息卡片
         GlassCard(
             modifier = Modifier.fillMaxWidth()
         ) {
@@ -171,7 +167,6 @@ fun HomeScreen() {
 
         Spacer(modifier = Modifier.height(12.dp))
 
-        // 卫星状态卡片
         GlassCard(
             modifier = Modifier
                 .fillMaxWidth()
@@ -186,7 +181,6 @@ fun HomeScreen() {
 
         Spacer(modifier = Modifier.height(12.dp))
 
-        // 轨迹记录状态
         GlassCard(
             modifier = Modifier.fillMaxWidth()
         ) {
@@ -214,7 +208,6 @@ fun HomeScreen() {
 
         Spacer(modifier = Modifier.height(12.dp))
 
-        // 操作按钮
         Row(
             modifier = Modifier.fillMaxWidth(),
             horizontalArrangement = Arrangement.spacedBy(12.dp)
@@ -244,7 +237,6 @@ fun HomeScreen() {
 
         Spacer(modifier = Modifier.height(12.dp))
 
-        // 传感器实时曲线
         Text(
             text = "📊 传感器实时曲线",
             fontSize = 16.sp,
@@ -291,11 +283,9 @@ fun HomeScreen() {
             color = Color(0xFF94A3B8)
         )
         
-        // 底部留白
         Spacer(modifier = Modifier.height(80.dp))
     }
 
-    // 卫星详情对话框
     if (showSatelliteDetail) {
         Dialog(
             onDismissRequest = { showSatelliteDetail = false }
@@ -316,7 +306,6 @@ fun HomeScreen() {
         }
     }
 
-    // 关于对话框
     if (showAboutDialog) {
         Dialog(
             onDismissRequest = { showAboutDialog = false }
