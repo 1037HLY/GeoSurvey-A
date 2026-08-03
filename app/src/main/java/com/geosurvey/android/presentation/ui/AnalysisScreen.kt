@@ -302,6 +302,62 @@ fun AnalysisScreen(
 
         Spacer(modifier = Modifier.height(12.dp))
 
+        // ========== 第四行：样本录入 ==========
+        Card(
+            modifier = Modifier
+                .fillMaxWidth()
+                .height(140.dp)
+                .clip(RoundedCornerShape(16.dp)),
+            colors = CardDefaults.cardColors(
+                containerColor = Color.White.copy(alpha = 0.7f)
+            ),
+            elevation = CardDefaults.cardElevation(defaultElevation = 4.dp)
+        ) {
+            Row(
+                modifier = Modifier
+                    .fillMaxSize()
+                    .padding(16.dp),
+                verticalAlignment = Alignment.CenterVertically
+            ) {
+                Text(
+                    text = "📋",
+                    fontSize = 40.sp,
+                    modifier = Modifier.width(60.dp)
+                )
+                Column(
+                    modifier = Modifier.weight(1f)
+                ) {
+                    Text(
+                        text = "样本录入",
+                        fontSize = 18.sp,
+                        fontWeight = FontWeight.SemiBold,
+                        color = Color(0xFF0F172A)
+                    )
+                    Text(
+                        text = "普通样本 / 钻孔样本",
+                        fontSize = 13.sp,
+                        color = Color(0xFF475569)
+                    )
+                    Text(
+                        text = "支持CSV导出",
+                        fontSize = 12.sp,
+                        color = Color(0xFF6B7280)
+                    )
+                }
+                Button(
+                    onClick = { navController.navigate("sample_input") },
+                    colors = ButtonDefaults.buttonColors(
+                        containerColor = Color(0xFF8B5CF6)
+                    ),
+                    shape = RoundedCornerShape(8.dp)
+                ) {
+                    Text("进入")
+                }
+            }
+        }
+
+        Spacer(modifier = Modifier.height(12.dp))
+
         // ========== 使用说明 ==========
         Card(
             modifier = Modifier.fillMaxWidth(),
@@ -321,7 +377,7 @@ fun AnalysisScreen(
                 )
                 Spacer(modifier = Modifier.height(4.dp))
                 Text(
-                    text = "1. 在「产状」页面测量并记录产状数据\n2. 选择「赤平投影」或「玫瑰花图」查看分析\n3. 选择「坐标转换」进行坐标系转换\n4. 选择「钻孔计算」进行钻孔参数计算",
+                    text = "1. 在「产状」页面测量并记录产状数据\n2. 选择「赤平投影」或「玫瑰花图」查看分析\n3. 选择「坐标转换」进行坐标系转换\n4. 选择「钻孔计算」进行钻孔参数计算\n5. 选择「样本录入」记录普通或钻孔样本",
                     fontSize = 12.sp,
                     color = Color(0xFF475569),
                     lineHeight = 18.sp
