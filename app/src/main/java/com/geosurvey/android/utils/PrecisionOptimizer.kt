@@ -79,7 +79,7 @@ class PrecisionOptimizer {
         // 3. 应用卡尔曼滤波
         val lat = location.latitude.toFloat()
         val lon = location.longitude.toFloat()
-        val alt = if (location.altitude != null) location.altitude!!.toFloat() else 0f
+        val alt = location.altitude?.toFloat() ?: 0f
         
         val (filteredLat, filteredLon, filteredAlt) = kalmanFilter.update(lat, lon, alt)
         
@@ -87,7 +87,8 @@ class PrecisionOptimizer {
             this.latitude = filteredLat.toDouble()
             this.longitude = filteredLon.toDouble()
             this.altitude = filteredAlt.toDouble()
-            this.accuracy = location.accuracy?.let { it * 0.7f }
+            // 修复：使用 ?: 0f 提供默认值
+            this.accuracy = location.accuracy?.let { it * 0.7f } ?: location.accuracy
         }
 
         lastLocation = result
