@@ -2,7 +2,6 @@ package com.geosurvey.android.presentation.ui
 
 import androidx.compose.foundation.Canvas
 import androidx.compose.foundation.background
-import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
@@ -32,7 +31,6 @@ fun SatelliteDetailScreen(
             .fillMaxSize()
             .padding(16.dp)
     ) {
-        // 标题
         Row(
             modifier = Modifier.fillMaxWidth(),
             horizontalArrangement = Arrangement.SpaceBetween,
@@ -51,7 +49,6 @@ fun SatelliteDetailScreen(
 
         Spacer(modifier = Modifier.height(12.dp))
 
-        // 统计信息
         GlassCard(
             modifier = Modifier.fillMaxWidth()
         ) {
@@ -76,7 +73,6 @@ fun SatelliteDetailScreen(
 
         Spacer(modifier = Modifier.height(12.dp))
 
-        // 极坐标图
         Card(
             modifier = Modifier
                 .fillMaxWidth()
@@ -99,7 +95,6 @@ fun SatelliteDetailScreen(
 
         Spacer(modifier = Modifier.height(12.dp))
 
-        // 星座图例
         GlassCard(
             modifier = Modifier.fillMaxWidth()
         ) {
@@ -175,9 +170,9 @@ fun PolarPlot(state: LocationState) {
                 val angle = (i * 30 + index * 7) % 360
                 val rad = Math.toRadians(angle.toDouble())
                 val distance = (0.2 + 0.7 * (i.toFloat() / max(count, 1))) * radius
-                // ⭐ 修复：使用 .toFloat() 确保类型匹配
-                val x = centerX + (distance * cos(rad).toFloat())
-                val y = centerY + (distance * sin(rad).toFloat())
+                // 修复：直接使用 Float 运算
+                val x = centerX + distance * cos(rad).toFloat()
+                val y = centerY + distance * sin(rad).toFloat()
                 val size = 6f + (i % 3) * 2f
                 drawCircle(
                     color = color.copy(alpha = 0.7f + 0.3f * (i.toFloat() / max(count, 1))),
