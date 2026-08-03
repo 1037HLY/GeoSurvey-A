@@ -140,8 +140,8 @@ fun PolarPlot(state: LocationState) {
         // 绘制十字线
         for (angle in 0..360 step 45) {
             val rad = Math.toRadians(angle.toDouble())
-            val endX = centerX + radius * cos(rad).toFloat()
-            val endY = centerY + radius * sin(rad).toFloat()
+            val endX = centerX + (radius * cos(rad)).toFloat()
+            val endY = centerY + (radius * sin(rad)).toFloat()
             drawLine(
                 color = Color.White.copy(alpha = 0.1f),
                 start = Offset(centerX, centerY),
@@ -170,9 +170,9 @@ fun PolarPlot(state: LocationState) {
                 val angle = (i * 30 + index * 7) % 360
                 val rad = Math.toRadians(angle.toDouble())
                 val distance = (0.2 + 0.7 * (i.toFloat() / max(count, 1))) * radius
-                // 修复：直接使用 Float 运算
-                val x = centerX + distance * cos(rad).toFloat()
-                val y = centerY + distance * sin(rad).toFloat()
+                // ⭐ 修复：使用 .toFloat() 确保类型匹配
+                val x = centerX + (distance * cos(rad)).toFloat()
+                val y = centerY + (distance * sin(rad)).toFloat()
                 val size = 6f + (i % 3) * 2f
                 drawCircle(
                     color = color.copy(alpha = 0.7f + 0.3f * (i.toFloat() / max(count, 1))),
