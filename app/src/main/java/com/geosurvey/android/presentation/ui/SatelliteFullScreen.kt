@@ -54,14 +54,14 @@ fun SatelliteFullScreen(
 
         Spacer(modifier = Modifier.height(8.dp))
 
-        // 统计信息
+        // ⭐ 统计信息 - 使用 SatelliteStatItem
         Row(
             modifier = Modifier.fillMaxWidth(),
             horizontalArrangement = Arrangement.SpaceEvenly
         ) {
-            StatItemFull("总数", "${state.satelliteCount}", Color.White)
-            StatItemFull("可用", "${state.usedSatelliteCount}", SecondaryGreen)
-            StatItemFull("质量", state.qualityText, state.qualityColor)
+            SatelliteStatItem("总数", "${state.satelliteCount}", Color.White)
+            SatelliteStatItem("可用", "${state.usedSatelliteCount}", SecondaryGreen)
+            SatelliteStatItem("质量", state.qualityText, state.qualityColor)
         }
 
         Spacer(modifier = Modifier.height(12.dp))
@@ -125,8 +125,9 @@ fun SatelliteFullScreen(
     }
 }
 
+// ⭐ 重命名后的统计项组件
 @Composable
-fun StatItemFull(label: String, value: String, color: Color) {
+fun SatelliteStatItem(label: String, value: String, color: Color) {
     Column(horizontalAlignment = Alignment.CenterHorizontally) {
         Text(
             text = value,
@@ -149,6 +150,7 @@ fun PolarPlotFull(state: LocationState) {
         val centerY = size.height / 2
         val radius = minOf(size.width, size.height) / 2 * 0.85f
 
+        // 绘制同心圆
         for (i in 1..3) {
             val r = radius * i / 3
             drawCircle(
@@ -159,6 +161,7 @@ fun PolarPlotFull(state: LocationState) {
             )
         }
 
+        // 绘制十字线
         for (angle in 0..360 step 45) {
             val rad = Math.toRadians(angle.toDouble())
             val endX = centerX + (radius * cos(rad)).toFloat()
@@ -171,6 +174,7 @@ fun PolarPlotFull(state: LocationState) {
             )
         }
 
+        // 绘制卫星点
         val total = max(state.satelliteCount, 1)
         val ratios = listOf(
             state.gpsCount.toFloat() / total,
