@@ -25,7 +25,6 @@ import com.geosurvey.android.presentation.theme.*
 import com.geosurvey.android.presentation.ui.components.GlassCard
 import kotlin.math.*
 
-// ⭐ 地层数据类移到顶层
 data class LayerData(
     val name: String,
     val depth: String,
@@ -36,7 +35,6 @@ data class LayerData(
 fun BoreholeScreen() {
     var showFullDialog by remember { mutableStateOf(false) }
     
-    // 输入参数
     var collarX by remember { mutableStateOf("") }
     var collarY by remember { mutableStateOf("") }
     var azimuth by remember { mutableStateOf("") }
@@ -44,12 +42,10 @@ fun BoreholeScreen() {
     var boreholeDepth by remember { mutableStateOf("") }
     var boreholeDiameter by remember { mutableStateOf("75") }
     
-    // 地层数据
     var layers by remember { mutableStateOf(listOf<LayerData>()) }
     var layerName by remember { mutableStateOf("") }
     var layerDepth by remember { mutableStateOf("") }
     
-    // 计算结果
     var resultBottomX by remember { mutableStateOf<String?>(null) }
     var resultBottomY by remember { mutableStateOf<String?>(null) }
     var resultDepth by remember { mutableStateOf<String?>(null) }
@@ -57,7 +53,6 @@ fun BoreholeScreen() {
     var resultVertical by remember { mutableStateOf<String?>(null) }
     var resultDipAngle by remember { mutableStateOf<String?>(null) }
     
-    // 地层颜色
     val layerColors = listOf(
         Color(0xFF8D6E63),
         Color(0xFFFFB74D),
@@ -130,7 +125,6 @@ fun BoreholeScreen() {
 
         Spacer(modifier = Modifier.height(12.dp))
 
-        // 输入参数卡片
         GlassCard(
             modifier = Modifier.fillMaxWidth()
         ) {
@@ -224,7 +218,6 @@ fun BoreholeScreen() {
 
         Spacer(modifier = Modifier.height(12.dp))
 
-        // 地层输入卡片
         GlassCard(
             modifier = Modifier.fillMaxWidth()
         ) {
@@ -265,7 +258,7 @@ fun BoreholeScreen() {
                 ) {
                     Text("添加")
                 }
-            )
+            }
 
             if (layers.isNotEmpty()) {
                 Spacer(modifier = Modifier.height(8.dp))
@@ -317,7 +310,6 @@ fun BoreholeScreen() {
 
         Spacer(modifier = Modifier.height(12.dp))
 
-        // 计算结果
         if (resultBottomX != null) {
             GlassCard(
                 modifier = Modifier
@@ -409,7 +401,6 @@ fun BoreholeScreen() {
         Spacer(modifier = Modifier.height(16.dp))
     }
 
-    // 全屏对话框
     if (showFullDialog) {
         Dialog(
             onDismissRequest = { showFullDialog = false }
@@ -579,7 +570,7 @@ fun BoreholeColumnChart(
         
         if (layers.isNotEmpty()) {
             var currentDepth = 0f
-            layers.forEachIndexed { index, layer ->
+            layers.forEach { layer ->
                 val depthVal = layer.depth.toFloatOrNull() ?: 0f
                 val barHeight = (depthVal / maxDepth * (chartHeight - padding * 2)).toFloat()
                 val x = (chartWidth - barWidth) / 2
@@ -655,7 +646,7 @@ fun BoreholeColumnChartFull(
         
         if (layers.isNotEmpty()) {
             var currentDepth = 0f
-            layers.forEachIndexed { index, layer ->
+            layers.forEach { layer ->
                 val depthVal = layer.depth.toFloatOrNull() ?: 0f
                 val barHeight = (depthVal / maxDepth * (chartHeight - padding * 2)).toFloat()
                 val x = (chartWidth - barWidth) / 2
