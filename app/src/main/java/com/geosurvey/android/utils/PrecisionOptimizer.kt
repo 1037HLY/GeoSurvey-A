@@ -44,10 +44,10 @@ class PrecisionOptimizer {
         private val filterLon = KalmanFilter(0.005f, 0.05f)
         private val filterAlt = KalmanFilter(0.01f, 0.1f)
 
-        fun update(lat: Float, lon: Float, alt: Float?): Triple<Float, Float, Float?> {
+        fun update(lat: Float, lon: Float, alt: Float): Triple<Float, Float, Float> {
             val filteredLat = filterLat.update(lat)
             val filteredLon = filterLon.update(lon)
-            val filteredAlt = alt?.let { filterAlt.update(it) }
+            val filteredAlt = filterAlt.update(alt)
             return Triple(filteredLat, filteredLon, filteredAlt)
         }
 
@@ -62,15 +62,21 @@ class PrecisionOptimizer {
     data class Config(
         var minAccuracy: Float = 15f,
         var minDistance: Float = 2.0f,
-        var enableKalmanFilter: Boolean = true,
-        var kalmanProcessNoise: Float = 0.005f,
-        var kalmanMeasurementNoise: Float = 0.05f
+        var enableKalmanFilter: Boolean = true
     )
 
     private val config = Config()
     private val kalmanFilter = KalmanFilter2D()
     private var lastLocation: Location? = null
 
+    /**
+     * 优化定位点
+     * @param location 原始定位
+     * @param satelliteCount 卫星数量（预留）
+     * @param hdop HDOP值（预留）
+     * @param pdop PDOP值（预留）
+     * @return 优化后的定位，如果应该丢弃则返回null
+     */
     fun optimize(
         location: Location,
         satelliteCount: Int = 0,
@@ -92,7 +98,6 @@ class PrecisionOptimizer {
 
         // 3. 应用卡尔曼滤波
         val result = if (config.enableKalmanFilter) {
-            // ⭐ 修复：使用 ?: 0f 处理 null
             val lat = location.latitude.toFloat()
             val lon = location.longitude.toFloat()
             val alt = location.altitude?.toFloat() ?: 0f
@@ -102,7 +107,8 @@ class PrecisionOptimizer {
             Location(location).apply {
                 this.latitude = filteredLat.toDouble()
                 this.longitude = filteredLon.toDouble()
-                this.altitude = filteredAlt?.toDouble()
+                this.altitude = filteredAlt.toDouble()
+                // 滤波后精度估算提升约30%
                 this.accuracy = location.accuracy?.let { it * 0.7f }
             }
         } else {
@@ -113,17 +119,22 @@ class PrecisionOptimizer {
         return result
     }
 
+    /**
+     * 重置滤波器
+     */
     fun reset() {
         kalmanFilter.reset()
         lastLocation = null
     }
 
+    /**
+     * 获取配置
+     */
     fun getConfig(): Config = config
 
-    fun updateConfig(block: Config.() -> Unit) {
-        config.block()
-    }
-
+    /**
+     * 启用/禁用卡尔曼滤波
+     */
     fun setKalmanFilterEnabled(enabled: Boolean) {
         config.enableKalmanFilter = enabled
         if (!enabled) {
@@ -131,6 +142,9 @@ class PrecisionOptimizer {
         }
     }
 
+    /**
+     * 是否已初始化
+     */
     fun isInitialized(): Boolean {
         return lastLocation != null
     }
