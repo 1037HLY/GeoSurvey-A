@@ -27,6 +27,7 @@ import androidx.core.content.ContextCompat
 import androidx.lifecycle.LifecycleOwner
 import com.geosurvey.android.GeoSurveyApplication
 import com.geosurvey.android.presentation.viewmodel.CameraViewModel
+import com.geosurvey.android.utils.GeocodingHelper
 import com.geosurvey.android.utils.WatermarkHelper
 import com.google.android.gms.location.FusedLocationProviderClient
 import com.google.android.gms.location.LocationCallback
@@ -319,13 +320,23 @@ fun CameraScreen() {
                                 isSaving = true
                                 coroutineScope.launch {
                                     val helper = WatermarkHelper(context)
+                                    val geocodingHelper = GeocodingHelper(context)
                                     val loc = state.currentLocation
+
+                                    // ⭐ 获取位置名称
+                                    val locationName = if (loc != null) {
+                                        runCatching {
+                                            geocodingHelper.getSimpleLocationName(loc.latitude, loc.longitude)
+                                        }.getOrNull() ?: ""
+                                    } else {
+                                        ""
+                                    }
 
                                     val data = WatermarkHelper.WatermarkData(
                                         latitude = loc?.latitude ?: 0.0,
                                         longitude = loc?.longitude ?: 0.0,
                                         altitude = loc?.altitude,
-                                        locationName = locationNameText,
+                                        locationName = locationName,
                                         dipDirection = state.dipDirection,
                                         dipAngle = state.dipAngle,
                                         strike = state.strike,
@@ -336,12 +347,12 @@ fun CameraScreen() {
                                     val config = WatermarkHelper.WatermarkConfig(
                                         showCoordinates = true,
                                         showTime = true,
-                                        showLocation = false,
+                                        showLocation = true,
                                         showAttitude = false,
                                         showNote = true,
-                                        textSize = 36f,
+                                        textSize = 56f,
                                         position = WatermarkHelper.Position.BOTTOM_RIGHT,
-                                        transparency = 0.7f
+                                        transparency = 0.8f
                                     )
 
                                     val watermarked = helper.addWatermark(capturedImage!!, data, config)
