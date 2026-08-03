@@ -88,7 +88,7 @@ class LocationViewModel : ViewModel() {
 
     fun init(context: Context) {
         this.context = context
-        this.isHarmonyOS = HarmonyOSDetector.isHarmonyOS()  // ⭐ 修复
+        this.isHarmonyOS = HarmonyOSDetector.isHarmonyOS()
         fusedLocationClient = LocationServices.getFusedLocationProviderClient(context)
         locationManager = context.getSystemService(Context.LOCATION_SERVICE) as LocationManager
         checkPermissionsAndStart()
@@ -207,33 +207,38 @@ class LocationViewModel : ViewModel() {
 
     private fun startSatelliteSimulation() {
         viewModelScope.launch {
-            var count = 8
             while (_state.value.isActive) {
                 val hasFix = _state.value.location != null
-                val baseCount = if (hasFix) 8 else 4
-                count = baseCount + (Math.random() * 12).toInt()
-                val usedCount = if (hasFix) (count * 0.7).toInt() else 0
+                
+                // 修复：确保总数 = GPS + GLONASS + 北斗 + Galileo
+                val gps = (2 + Math.random() * 6).toInt()
+                val glonass = (1 + Math.random() * 4).toInt()
+                val beidou = (1 + Math.random() * 4).toInt()
+                val galileo = (1 + Math.random() * 3).toInt()
+                val total = gps + glonass + beidou + galileo
+                
+                val usedCount = if (hasFix) (total * 0.7).toInt() else 0
 
                 _state.value = _state.value.copy(
-                    satelliteCount = count,
+                    satelliteCount = total,
                     usedSatelliteCount = usedCount,
-                    gpsCount = (2 + Math.random() * 6).toInt(),
-                    glonassCount = (1 + Math.random() * 4).toInt(),
-                    beidouCount = (1 + Math.random() * 4).toInt(),
-                    galileoCount = (1 + Math.random() * 3).toInt(),
+                    gpsCount = gps,
+                    glonassCount = glonass,
+                    beidouCount = beidou,
+                    galileoCount = galileo,
                     averageSnr = 20f + (Math.random() * 20).toFloat(),
                     qualityText = when {
-                        hasFix && count > 15 -> "优秀 🌟"
-                        hasFix && count > 10 -> "良好 ✅"
-                        hasFix && count > 6 -> "一般 📡"
+                        hasFix && total > 15 -> "优秀 🌟"
+                        hasFix && total > 10 -> "良好 ✅"
+                        hasFix && total > 6 -> "一般 📡"
                         hasFix -> "较差 ⚠️"
                         _state.value.isSearching -> "搜索中... 🔍"
                         else -> "等待定位"
                     },
                     qualityColor = when {
-                        hasFix && count > 15 -> Color(0xFF10B981)
-                        hasFix && count > 10 -> Color(0xFF0EA5E9)
-                        hasFix && count > 6 -> Color(0xFFF59E0B)
+                        hasFix && total > 15 -> Color(0xFF10B981)
+                        hasFix && total > 10 -> Color(0xFF0EA5E9)
+                        hasFix && total > 6 -> Color(0xFFF59E0B)
                         _state.value.isSearching -> Color(0xFFF59E0B)
                         else -> Color(0xFF94A3B8)
                     }
@@ -245,7 +250,7 @@ class LocationViewModel : ViewModel() {
 
     private fun startTimeoutCheck() {
         viewModelScope.launch {
-            delay(20000)
+            delay(45000) // 45秒超时
             if (_state.value.location == null && _state.value.isActive) {
                 val msg = if (isHarmonyOS) {
                     "定位超时，请检查GPS设置（鸿蒙系统）"
