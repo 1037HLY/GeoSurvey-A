@@ -25,7 +25,7 @@ import com.geosurvey.android.presentation.theme.*
 import com.geosurvey.android.presentation.ui.components.GlassCard
 import kotlin.math.*
 
-data class LayerData(
+data class BoreholeLayer(
     val name: String,
     val depth: String,
     val color: Color
@@ -42,7 +42,7 @@ fun BoreholeScreen() {
     var boreholeDepth by remember { mutableStateOf("") }
     var boreholeDiameter by remember { mutableStateOf("75") }
     
-    var layers by remember { mutableStateOf(listOf<LayerData>()) }
+    var layers by remember { mutableStateOf(listOf<BoreholeLayer>()) }
     var layerName by remember { mutableStateOf("") }
     var layerDepth by remember { mutableStateOf("") }
     
@@ -88,7 +88,7 @@ fun BoreholeScreen() {
             val depthVal = layerDepth.toDoubleOrNull()
             if (depthVal != null && depthVal > 0) {
                 val colorIndex = layers.size % layerColors.size
-                layers = layers + LayerData(
+                layers = layers + BoreholeLayer(
                     name = layerName,
                     depth = layerDepth,
                     color = layerColors[colorIndex]
@@ -112,25 +112,33 @@ fun BoreholeScreen() {
         Text(text = "🔧 钻孔计算", fontSize = 24.sp, fontWeight = FontWeight.Bold, color = Color(0xFF0F172A))
         Spacer(modifier = Modifier.height(12.dp))
 
-        // 输入卡片
+        // 输入参数
         GlassCard(modifier = Modifier.fillMaxWidth()) {
-            Text(text = "📥 钻孔参数", fontSize = 16.sp, fontWeight = FontWeight.SemiBold, color = Color(0xFF0F172A))
+            Text("📥 钻孔参数", fontSize = 16.sp, fontWeight = FontWeight.SemiBold, color = Color(0xFF0F172A))
             Spacer(modifier = Modifier.height(8.dp))
 
             Row(modifier = Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.spacedBy(8.dp)) {
-                OutlinedTextField(value = collarX, onValueChange = { collarX = it }, label = { Text("孔口X") }, modifier = Modifier.weight(1f), shape = RoundedCornerShape(8.dp), singleLine = true)
-                OutlinedTextField(value = collarY, onValueChange = { collarY = it }, label = { Text("孔口Y") }, modifier = Modifier.weight(1f), shape = RoundedCornerShape(8.dp), singleLine = true)
+                OutlinedTextField(value = collarX, onValueChange = { collarX = it }, label = { Text("孔口X") },
+                    modifier = Modifier.weight(1f), shape = RoundedCornerShape(8.dp), singleLine = true)
+                OutlinedTextField(value = collarY, onValueChange = { collarY = it }, label = { Text("孔口Y") },
+                    modifier = Modifier.weight(1f), shape = RoundedCornerShape(8.dp), singleLine = true)
             }
             Row(modifier = Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.spacedBy(8.dp)) {
-                OutlinedTextField(value = azimuth, onValueChange = { azimuth = it }, label = { Text("方位角 (°)") }, modifier = Modifier.weight(1f), shape = RoundedCornerShape(8.dp), singleLine = true)
-                OutlinedTextField(value = dipAngle, onValueChange = { dipAngle = it }, label = { Text("倾角 (°)") }, modifier = Modifier.weight(1f), shape = RoundedCornerShape(8.dp), singleLine = true)
+                OutlinedTextField(value = azimuth, onValueChange = { azimuth = it }, label = { Text("方位角 (°)") },
+                    modifier = Modifier.weight(1f), shape = RoundedCornerShape(8.dp), singleLine = true)
+                OutlinedTextField(value = dipAngle, onValueChange = { dipAngle = it }, label = { Text("倾角 (°)") },
+                    modifier = Modifier.weight(1f), shape = RoundedCornerShape(8.dp), singleLine = true)
             }
             Row(modifier = Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.spacedBy(8.dp)) {
-                OutlinedTextField(value = boreholeDepth, onValueChange = { boreholeDepth = it }, label = { Text("孔深 (m)") }, modifier = Modifier.weight(1f), shape = RoundedCornerShape(8.dp), singleLine = true)
-                OutlinedTextField(value = boreholeDiameter, onValueChange = { boreholeDiameter = it }, label = { Text("孔径 (mm)") }, modifier = Modifier.weight(1f), shape = RoundedCornerShape(8.dp), singleLine = true)
+                OutlinedTextField(value = boreholeDepth, onValueChange = { boreholeDepth = it }, label = { Text("孔深 (m)") },
+                    modifier = Modifier.weight(1f), shape = RoundedCornerShape(8.dp), singleLine = true)
+                OutlinedTextField(value = boreholeDiameter, onValueChange = { boreholeDiameter = it }, label = { Text("孔径 (mm)") },
+                    modifier = Modifier.weight(1f), shape = RoundedCornerShape(8.dp), singleLine = true)
             }
+
             Spacer(modifier = Modifier.height(8.dp))
-            Button(onClick = { calculate() }, modifier = Modifier.fillMaxWidth(), colors = ButtonDefaults.buttonColors(containerColor = PrimaryBlue), shape = RoundedCornerShape(12.dp)) {
+            Button(onClick = { calculate() }, modifier = Modifier.fillMaxWidth(),
+                colors = ButtonDefaults.buttonColors(containerColor = PrimaryBlue), shape = RoundedCornerShape(12.dp)) {
                 Text("🔄 计算钻孔参数")
             }
         }
@@ -139,20 +147,25 @@ fun BoreholeScreen() {
 
         // 地层输入
         GlassCard(modifier = Modifier.fillMaxWidth()) {
-            Text(text = "📋 地层信息", fontSize = 16.sp, fontWeight = FontWeight.SemiBold, color = Color(0xFF0F172A))
+            Text("📋 地层信息", fontSize = 16.sp, fontWeight = FontWeight.SemiBold, color = Color(0xFF0F172A))
             Spacer(modifier = Modifier.height(8.dp))
 
             Row(modifier = Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.spacedBy(8.dp)) {
-                OutlinedTextField(value = layerName, onValueChange = { layerName = it }, label = { Text("层名") }, modifier = Modifier.weight(1f), shape = RoundedCornerShape(8.dp), singleLine = true)
-                OutlinedTextField(value = layerDepth, onValueChange = { layerDepth = it }, label = { Text("厚度 (m)") }, modifier = Modifier.weight(1f), shape = RoundedCornerShape(8.dp), singleLine = true)
-                Button(onClick = { addLayer() }, colors = ButtonDefaults.buttonColors(containerColor = SecondaryGreen), shape = RoundedCornerShape(8.dp)) { Text("添加") }
+                OutlinedTextField(value = layerName, onValueChange = { layerName = it }, label = { Text("层名") },
+                    modifier = Modifier.weight(1f), shape = RoundedCornerShape(8.dp), singleLine = true)
+                OutlinedTextField(value = layerDepth, onValueChange = { layerDepth = it }, label = { Text("厚度 (m)") },
+                    modifier = Modifier.weight(1f), shape = RoundedCornerShape(8.dp), singleLine = true)
+                Button(onClick = { addLayer() }, colors = ButtonDefaults.buttonColors(containerColor = SecondaryGreen),
+                    shape = RoundedCornerShape(8.dp)) { Text("添加") }
             }
 
             if (layers.isNotEmpty()) {
                 Spacer(modifier = Modifier.height(8.dp))
-                LazyColumn(modifier = Modifier.fillMaxWidth().height(120.dp).background(Color(0xFFF1F5F9)).clip(RoundedCornerShape(8.dp)), verticalArrangement = Arrangement.spacedBy(2.dp)) {
+                LazyColumn(modifier = Modifier.fillMaxWidth().height(120.dp).background(Color(0xFFF1F5F9)).clip(RoundedCornerShape(8.dp)),
+                    verticalArrangement = Arrangement.spacedBy(2.dp)) {
                     items(layers) { layer ->
-                        Row(modifier = Modifier.fillMaxWidth().background(Color.White).padding(horizontal = 8.dp, vertical = 4.dp), horizontalArrangement = Arrangement.SpaceBetween, verticalAlignment = Alignment.CenterVertically) {
+                        Row(modifier = Modifier.fillMaxWidth().background(Color.White).padding(horizontal = 8.dp, vertical = 4.dp),
+                            horizontalArrangement = Arrangement.SpaceBetween, verticalAlignment = Alignment.CenterVertically) {
                             Row(verticalAlignment = Alignment.CenterVertically) {
                                 Box(modifier = Modifier.size(12.dp).clip(RoundedCornerShape(2.dp)).background(layer.color))
                                 Spacer(modifier = Modifier.width(8.dp))
@@ -169,10 +182,10 @@ fun BoreholeScreen() {
 
         Spacer(modifier = Modifier.height(12.dp))
 
-        // 计算结果 + 投影示意图
+        // 计算结果和柱状图
         if (resultBottomX != null) {
             GlassCard(modifier = Modifier.fillMaxWidth().clickable { showFullDialog = true }) {
-                Text(text = "📊 计算结果 (点击放大)", fontSize = 14.sp, fontWeight = FontWeight.SemiBold, color = SecondaryGreen)
+                Text("📊 计算结果 (点击放大)", fontSize = 14.sp, fontWeight = FontWeight.SemiBold, color = SecondaryGreen)
                 Spacer(modifier = Modifier.height(8.dp))
                 
                 Row(modifier = Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.SpaceEvenly) {
@@ -206,7 +219,7 @@ fun BoreholeScreen() {
                 }
                 
                 Spacer(modifier = Modifier.height(8.dp))
-                Text(text = "📐 钻孔投影示意图", fontSize = 13.sp, fontWeight = FontWeight.SemiBold, color = Color(0xFF0F172A))
+                Text("📊 钻孔柱状图", fontSize = 13.sp, fontWeight = FontWeight.SemiBold, color = Color(0xFF0F172A))
                 Spacer(modifier = Modifier.height(4.dp))
                 
                 // 投影示意图
@@ -215,13 +228,23 @@ fun BoreholeScreen() {
                     vertical = resultVertical?.toDoubleOrNull() ?: 0.0,
                     dipAngle = resultDipAngle?.toDoubleOrNull() ?: 90.0
                 )
+                
+                Spacer(modifier = Modifier.height(8.dp))
+                
+                // 柱状图
+                SimpleColumnChart(
+                    layers = layers,
+                    totalDepth = boreholeDepth.toDoubleOrNull() ?: 10.0
+                )
             }
         }
 
         Spacer(modifier = Modifier.height(12.dp))
         
-        Card(modifier = Modifier.fillMaxWidth(), colors = CardDefaults.cardColors(containerColor = Color(0xFFF1F5F9)), shape = RoundedCornerShape(12.dp)) {
-            Text(text = "💡 输入参数后点击「计算钻孔参数」，点击结果卡片可全屏查看柱状图", modifier = Modifier.padding(12.dp), fontSize = 11.sp, color = Color(0xFF475569), lineHeight = 16.sp)
+        Card(modifier = Modifier.fillMaxWidth(), colors = CardDefaults.cardColors(containerColor = Color(0xFFF1F5F9)),
+            shape = RoundedCornerShape(12.dp)) {
+            Text("💡 输入钻孔参数和地层信息，点击「计算钻孔参数」生成柱状图\n点击结果卡片可全屏查看",
+                modifier = Modifier.padding(12.dp), fontSize = 11.sp, color = Color(0xFF475569), lineHeight = 16.sp)
         }
 
         Spacer(modifier = Modifier.height(16.dp))
@@ -230,51 +253,72 @@ fun BoreholeScreen() {
     // 全屏对话框
     if (showFullDialog) {
         Dialog(onDismissRequest = { showFullDialog = false }) {
-            Surface(modifier = Modifier.fillMaxWidth().fillMaxHeight(0.92f).padding(8.dp), shape = RoundedCornerShape(16.dp), color = Color(0xFFF8FAFC)) {
+            Surface(modifier = Modifier.fillMaxWidth().fillMaxHeight(0.92f).padding(8.dp),
+                shape = RoundedCornerShape(16.dp), color = Color(0xFFF8FAFC)) {
                 Column(modifier = Modifier.fillMaxSize().verticalScroll(rememberScrollState()).padding(16.dp)) {
-                    Row(modifier = Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.SpaceBetween, verticalAlignment = Alignment.CenterVertically) {
-                        Text(text = "🔧 钻孔柱状图 - 全屏", fontSize = 20.sp, fontWeight = FontWeight.Bold, color = Color(0xFF0F172A))
+                    Row(modifier = Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.SpaceBetween,
+                        verticalAlignment = Alignment.CenterVertically) {
+                        Text("🔧 钻孔柱状图 - 全屏", fontSize = 20.sp, fontWeight = FontWeight.Bold, color = Color(0xFF0F172A))
                         IconButton(onClick = { showFullDialog = false }) { Text("✕", fontSize = 20.sp) }
                     }
+                    
                     Spacer(modifier = Modifier.height(12.dp))
                     
                     if (resultBottomX != null) {
-                        Text(text = "📊 钻孔参数", fontSize = 16.sp, fontWeight = FontWeight.SemiBold, color = PrimaryBlue)
+                        Text("📊 钻孔参数", fontSize = 16.sp, fontWeight = FontWeight.SemiBold, color = PrimaryBlue)
                         Spacer(modifier = Modifier.height(8.dp))
+                        
                         Card(modifier = Modifier.fillMaxWidth(), colors = CardDefaults.cardColors(containerColor = Color(0xFFF1F5F9))) {
                             Column(modifier = Modifier.padding(12.dp)) {
-                                Text(text = "孔口坐标: (${collarX}, ${collarY})", fontSize = 13.sp)
-                                Text(text = "方位角: ${azimuth}° | 倾角: ${dipAngle}°", fontSize = 13.sp)
-                                Text(text = "孔深: ${boreholeDepth}m | 孔径: ${boreholeDiameter}mm", fontSize = 13.sp)
-                                Text(text = "孔底坐标: (${resultBottomX}, ${resultBottomY})", fontSize = 13.sp, color = SecondaryGreen)
-                                Text(text = "水平投影: ${resultHorizontal}m | 垂直投影: ${resultVertical}m", fontSize = 13.sp)
+                                Text("孔口坐标: (${collarX}, ${collarY})", fontSize = 13.sp)
+                                Text("方位角: ${azimuth}° | 倾角: ${dipAngle}°", fontSize = 13.sp)
+                                Text("孔深: ${boreholeDepth}m | 孔径: ${boreholeDiameter}mm", fontSize = 13.sp)
+                                Text("孔底坐标: (${resultBottomX}, ${resultBottomY})", fontSize = 13.sp, color = SecondaryGreen)
+                                Text("水平投影: ${resultHorizontal}m | 垂直投影: ${resultVertical}m", fontSize = 13.sp)
                             }
                         }
+                        
                         Spacer(modifier = Modifier.height(12.dp))
-                        Text(text = "📊 钻孔柱状图", fontSize = 16.sp, fontWeight = FontWeight.SemiBold, color = Color(0xFF0F172A))
+                        
+                        Text("📊 投影示意图", fontSize = 16.sp, fontWeight = FontWeight.SemiBold, color = Color(0xFF0F172A))
                         Spacer(modifier = Modifier.height(8.dp))
-                        Card(modifier = Modifier.fillMaxWidth().height(400.dp).clip(RoundedCornerShape(12.dp)), colors = CardDefaults.cardColors(containerColor = Color.White)) {
+                        
+                        Card(modifier = Modifier.fillMaxWidth().height(200.dp).clip(RoundedCornerShape(12.dp)),
+                            colors = CardDefaults.cardColors(containerColor = Color.White)) {
                             Box(modifier = Modifier.fillMaxSize(), contentAlignment = Alignment.Center) {
-                                BoreholeColumnChartFull(
-                                    layers = layers,
-                                    totalDepth = boreholeDepth.toDoubleOrNull() ?: 10.0,
-                                    diameter = boreholeDiameter.toDoubleOrNull() ?: 75.0,
-                                    dipAngle = dipAngle.toDoubleOrNull() ?: 90.0,
+                                ProjectionDiagramFull(
                                     horizontal = resultHorizontal?.toDoubleOrNull() ?: 0.0,
-                                    vertical = resultVertical?.toDoubleOrNull() ?: 0.0
+                                    vertical = resultVertical?.toDoubleOrNull() ?: 0.0,
+                                    dipAngle = resultDipAngle?.toDoubleOrNull() ?: 90.0
                                 )
                             }
                         }
+                        
+                        Spacer(modifier = Modifier.height(12.dp))
+                        
+                        Text("📊 钻孔柱状图", fontSize = 16.sp, fontWeight = FontWeight.SemiBold, color = Color(0xFF0F172A))
+                        Spacer(modifier = Modifier.height(8.dp))
+                        
+                        Card(modifier = Modifier.fillMaxWidth().height(400.dp).clip(RoundedCornerShape(12.dp)),
+                            colors = CardDefaults.cardColors(containerColor = Color.White)) {
+                            Box(modifier = Modifier.fillMaxSize(), contentAlignment = Alignment.Center) {
+                                ColumnChartFull(
+                                    layers = layers,
+                                    totalDepth = boreholeDepth.toDoubleOrNull() ?: 10.0
+                                )
+                            }
+                        }
+                        
                         if (layers.isNotEmpty()) {
                             Spacer(modifier = Modifier.height(8.dp))
-                            Text(text = "📋 地层图例", fontSize = 14.sp, fontWeight = FontWeight.SemiBold, color = Color(0xFF0F172A))
+                            Text("📋 地层图例", fontSize = 14.sp, fontWeight = FontWeight.SemiBold, color = Color(0xFF0F172A))
                             Spacer(modifier = Modifier.height(4.dp))
                             Row(modifier = Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.spacedBy(8.dp)) {
                                 layers.forEach { layer ->
                                     Row(verticalAlignment = Alignment.CenterVertically) {
                                         Box(modifier = Modifier.size(12.dp).clip(RoundedCornerShape(2.dp)).background(layer.color))
                                         Spacer(modifier = Modifier.width(4.dp))
-                                        Text(text = "${layer.name} (${layer.depth}m)", fontSize = 10.sp, color = Color(0xFF475569))
+                                        Text("${layer.name} (${layer.depth}m)", fontSize = 10.sp, color = Color(0xFF475569))
                                     }
                                 }
                             }
@@ -286,7 +330,6 @@ fun BoreholeScreen() {
     }
 }
 
-// 投影示意图
 @Composable
 fun ProjectionDiagram(horizontal: Double, vertical: Double, dipAngle: Double) {
     Canvas(modifier = Modifier.fillMaxWidth().height(120.dp)) {
@@ -295,68 +338,102 @@ fun ProjectionDiagram(horizontal: Double, vertical: Double, dipAngle: Double) {
         val padding = 20f
         val maxVal = max(horizontal.toFloat(), vertical.toFloat(), 1f)
         val scale = (height - padding * 2) / maxVal / 1.2f
-        
-        val centerX = width / 2
-        val bottomY = height - padding
-        
-        // 绘制垂直线（垂直投影）
-        val vertLen = (vertical * scale).toFloat()
-        drawLine(
-            color = PrimaryBlue,
-            start = Offset(centerX, bottomY),
-            end = Offset(centerX, bottomY - vertLen),
-            strokeWidth = 3f
-        )
-        
-        // 绘制水平线（水平投影）
-        val horLen = (horizontal * scale).toFloat()
-        drawLine(
-            color = Color(0xFF10B981),
-            start = Offset(centerX, bottomY),
-            end = Offset(centerX + horLen, bottomY),
-            strokeWidth = 3f
-        )
-        
-        // 绘制斜线（钻孔方向）
-        val endX = centerX + horLen
-        val endY = bottomY - vertLen
-        drawLine(
-            color = Color(0xFF8B5CF6),
-            start = Offset(centerX, bottomY),
-            end = Offset(endX, endY),
-            strokeWidth = 2f,
-            style = Stroke(width = 2f, pathEffect = androidx.compose.ui.graphics.PathEffect.dashPathEffect(floatArrayOf(6f, 4f)))
-        )
-        
-        // 绘制角度弧
-        drawArc(
-            color = Color(0xFFF59E0B),
-            startAngle = -90f,
-            sweepAngle = -dipAngle.toFloat(),
-            useCenter = false,
-            topLeft = Offset(centerX - 30f, bottomY - 30f),
-            size = androidx.compose.ui.geometry.Size(60f, 60f),
-            style = Stroke(width = 2f)
-        )
-        
-        // 标签
-        val labelY = bottomY + 20f
-        // 标注用点代替文字
-        drawCircle(color = PrimaryBlue, radius = 3f, center = Offset(centerX, bottomY - vertLen / 2))
-        drawCircle(color = Color(0xFF10B981), radius = 3f, center = Offset(centerX + horLen / 2, bottomY))
-        drawCircle(color = Color(0xFF8B5CF6), radius = 3f, center = Offset((centerX + endX) / 2, (bottomY + endY) / 2))
+
+        // 绘制轴线
+        drawLine(Color(0xFF475569), Offset(padding, padding), Offset(padding, height - padding), strokeWidth = 2f)
+        drawLine(Color(0xFF475569), Offset(padding, height - padding), Offset(width - padding, height - padding), strokeWidth = 2f)
+
+        // 绘制箭头
+        drawLine(Color(0xFF475569), Offset(padding, padding), Offset(padding - 6, padding + 12), strokeWidth = 2f)
+        drawLine(Color(0xFF475569), Offset(padding, padding), Offset(padding + 6, padding + 12), strokeWidth = 2f)
+        drawLine(Color(0xFF475569), Offset(width - padding, height - padding), Offset(width - padding - 12, height - padding - 6), strokeWidth = 2f)
+        drawLine(Color(0xFF475569), Offset(width - padding, height - padding), Offset(width - padding - 12, height - padding + 6), strokeWidth = 2f)
+
+        // 绘制向量
+        val endX = padding + (horizontal.toFloat() * scale)
+        val endY = height - padding - (vertical.toFloat() * scale)
+        drawLine(PrimaryBlue, Offset(padding, height - padding), Offset(endX, endY), strokeWidth = 4f)
+
+        // 绘制虚线投影
+        drawLine(Color(0xFF94A3B8).copy(alpha = 0.5f), Offset(endX, endY), Offset(endX, height - padding), strokeWidth = 1f, 
+            pathEffect = androidx.compose.ui.graphics.PathEffect.dashPathEffect(floatArrayOf(4f, 4f)))
+        drawLine(Color(0xFF94A3B8).copy(alpha = 0.5f), Offset(endX, endY), Offset(padding, endY), strokeWidth = 1f,
+            pathEffect = androidx.compose.ui.graphics.PathEffect.dashPathEffect(floatArrayOf(4f, 4f)))
+
+        // 绘制标签点
+        drawCircle(PrimaryBlue, radius = 6f, center = Offset(endX, endY))
+
+        // 标注文字（用圆点代替）
+        drawCircle(Color(0xFF475569), radius = 2f, center = Offset(endX, height - padding))
+        drawCircle(Color(0xFF475569), radius = 2f, center = Offset(padding, endY))
     }
 }
 
 @Composable
-fun BoreholeColumnChartFull(
-    layers: List<LayerData>,
-    totalDepth: Double,
-    diameter: Double,
-    dipAngle: Double,
-    horizontal: Double,
-    vertical: Double
-) {
+fun ProjectionDiagramFull(horizontal: Double, vertical: Double, dipAngle: Double) {
+    Canvas(modifier = Modifier.fillMaxSize().padding(24.dp)) {
+        val width = size.width
+        val height = size.height
+        val padding = 40f
+        val maxVal = max(horizontal.toFloat(), vertical.toFloat(), 1f)
+        val scale = (height - padding * 2) / maxVal / 1.2f
+
+        drawLine(Color(0xFF475569), Offset(padding, padding), Offset(padding, height - padding), strokeWidth = 2f)
+        drawLine(Color(0xFF475569), Offset(padding, height - padding), Offset(width - padding, height - padding), strokeWidth = 2f)
+
+        val endX = padding + (horizontal.toFloat() * scale)
+        val endY = height - padding - (vertical.toFloat() * scale)
+        drawLine(PrimaryBlue, Offset(padding, height - padding), Offset(endX, endY), strokeWidth = 4f)
+
+        drawLine(Color(0xFF94A3B8).copy(alpha = 0.5f), Offset(endX, endY), Offset(endX, height - padding), strokeWidth = 1f,
+            pathEffect = androidx.compose.ui.graphics.PathEffect.dashPathEffect(floatArrayOf(4f, 4f)))
+        drawLine(Color(0xFF94A3B8).copy(alpha = 0.5f), Offset(endX, endY), Offset(padding, endY), strokeWidth = 1f,
+            pathEffect = androidx.compose.ui.graphics.PathEffect.dashPathEffect(floatArrayOf(4f, 4f)))
+
+        drawCircle(PrimaryBlue, radius = 8f, center = Offset(endX, endY))
+        drawCircle(Color(0xFF475569), radius = 3f, center = Offset(endX, height - padding))
+        drawCircle(Color(0xFF475569), radius = 3f, center = Offset(padding, endY))
+    }
+}
+
+@Composable
+fun SimpleColumnChart(layers: List<BoreholeLayer>, totalDepth: Double) {
+    Canvas(modifier = Modifier.fillMaxWidth().height(150.dp)) {
+        val chartWidth = size.width
+        val chartHeight = size.height
+        val padding = 20f
+        val barWidth = 40f
+        val maxDepth = totalDepth.toFloat()
+        
+        if (layers.isNotEmpty()) {
+            var currentDepth = 0f
+            layers.forEach { layer ->
+                val depthVal = layer.depth.toFloatOrNull() ?: 0f
+                val barHeight = (depthVal / maxDepth * (chartHeight - padding * 2))
+                val x = (chartWidth - barWidth) / 2
+                val y = padding + chartHeight - padding - barHeight - currentDepth * (chartHeight - padding * 2) / maxDepth
+                
+                drawRect(layer.color, topLeft = Offset(x, y), size = androidx.compose.ui.geometry.Size(barWidth, barHeight))
+                drawRect(Color(0xFFE2E8F0), topLeft = Offset(x, y), size = androidx.compose.ui.geometry.Size(barWidth, barHeight), style = Stroke(width = 1f))
+                
+                currentDepth += depthVal
+            }
+            
+            drawLine(Color(0xFF94A3B8), Offset(padding, padding), Offset(padding, padding + chartHeight - padding * 2), strokeWidth = 1f)
+            for (i in 0..4) {
+                val y = padding + (chartHeight - padding * 2) * (1f - i / 4f)
+                drawCircle(Color(0xFF94A3B8), radius = 2f, center = Offset(padding - 4f, y))
+            }
+        } else {
+            drawLine(Color(0xFF94A3B8), Offset(padding, padding + chartHeight / 2), Offset(padding + chartWidth - padding, padding + chartHeight / 2),
+                strokeWidth = 1f, pathEffect = androidx.compose.ui.graphics.PathEffect.dashPathEffect(floatArrayOf(5f, 5f)))
+            drawCircle(Color(0xFF94A3B8), radius = 3f, center = Offset(padding + chartWidth / 2, padding + chartHeight / 2))
+        }
+    }
+}
+
+@Composable
+fun ColumnChartFull(layers: List<BoreholeLayer>, totalDepth: Double) {
     Canvas(modifier = Modifier.fillMaxSize().padding(24.dp)) {
         val chartWidth = size.width
         val chartHeight = size.height
@@ -368,23 +445,23 @@ fun BoreholeColumnChartFull(
             var currentDepth = 0f
             layers.forEach { layer ->
                 val depthVal = layer.depth.toFloatOrNull() ?: 0f
-                val barHeight = (depthVal / maxDepth * (chartHeight - padding * 2)).toFloat()
+                val barHeight = (depthVal / maxDepth * (chartHeight - padding * 2))
                 val x = (chartWidth - barWidth) / 2
                 val y = padding + chartHeight - padding - barHeight - currentDepth * (chartHeight - padding * 2) / maxDepth
                 
-                drawRect(color = layer.color, topLeft = Offset(x, y), size = androidx.compose.ui.geometry.Size(barWidth, barHeight))
-                drawRect(color = Color(0xFFE2E8F0), topLeft = Offset(x, y), size = androidx.compose.ui.geometry.Size(barWidth, barHeight), style = Stroke(width = 1f))
-                
+                drawRect(layer.color, topLeft = Offset(x, y), size = androidx.compose.ui.geometry.Size(barWidth, barHeight))
+                drawRect(Color(0xFFE2E8F0), topLeft = Offset(x, y), size = androidx.compose.ui.geometry.Size(barWidth, barHeight), style = Stroke(width = 1f))
                 currentDepth += depthVal
             }
             
-            drawLine(color = Color(0xFF475569), start = Offset(padding, padding), end = Offset(padding, padding + chartHeight - padding * 2), strokeWidth = 2f)
+            drawLine(Color(0xFF475569), Offset(padding, padding), Offset(padding, padding + chartHeight - padding * 2), strokeWidth = 2f)
             for (i in 0..5) {
                 val y = padding + (chartHeight - padding * 2) * (1f - i / 5f)
-                drawCircle(color = Color(0xFF475569), radius = 3f, center = Offset(padding - 8f, y))
+                drawCircle(Color(0xFF475569), radius = 3f, center = Offset(padding - 8f, y))
             }
         } else {
-            drawLine(color = Color(0xFF94A3B8), start = Offset(padding, padding + chartHeight / 2), end = Offset(padding + chartWidth - padding, padding + chartHeight / 2), strokeWidth = 1f, pathEffect = androidx.compose.ui.graphics.PathEffect.dashPathEffect(floatArrayOf(5f, 5f)))
+            drawLine(Color(0xFF94A3B8), Offset(padding, padding + chartHeight / 2), Offset(padding + chartWidth - padding, padding + chartHeight / 2),
+                strokeWidth = 1f, pathEffect = androidx.compose.ui.graphics.PathEffect.dashPathEffect(floatArrayOf(5f, 5f)))
         }
     }
 }
