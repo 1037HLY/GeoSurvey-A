@@ -47,14 +47,12 @@ class LocationViewModel : ViewModel() {
     private var locationManager: LocationManager? = null
     private var context: Context? = null
     private var isHarmonyOS = false
-    private var fallbackLocationListener: android.location.LocationListener? = null
 
     private val _state = MutableStateFlow(LocationState())
     val state: StateFlow<LocationState> = _state.asStateFlow()
 
     private var isFirstFix = true
     private var startTime = 0L
-    private var isFallbackMode = false
 
     private val locationCallback = object : LocationCallback() {
         override fun onLocationResult(result: LocationResult) {
@@ -64,7 +62,6 @@ class LocationViewModel : ViewModel() {
         }
     }
 
-    // ⭐ 鸿蒙系统备用定位监听
     private val harmonyLocationListener = object : android.location.LocationListener {
         override fun onLocationChanged(location: Location) {
             updateLocation(location)
@@ -91,7 +88,7 @@ class LocationViewModel : ViewModel() {
 
     fun init(context: Context) {
         this.context = context
-        this.isHarmonyOS = HarmonyOSDetector.isHarmonyOS(context)
+        this.isHarmonyOS = HarmonyOSDetector.isHarmonyOS()  // ⭐ 修复
         fusedLocationClient = LocationServices.getFusedLocationProviderClient(context)
         locationManager = context.getSystemService(Context.LOCATION_SERVICE) as LocationManager
         checkPermissionsAndStart()
@@ -122,25 +119,17 @@ class LocationViewModel : ViewModel() {
         )
         startTime = System.currentTimeMillis()
         isFirstFix = true
-        isFallbackMode = false
 
-        // ⭐ 鸿蒙系统：使用多种定位方式
         if (isHarmonyOS) {
             startHarmonyLocation()
         } else {
             startStandardLocation()
         }
 
-        // 模拟卫星数据
         startSatelliteSimulation()
-
-        // 超时提示
         startTimeoutCheck()
     }
 
-    /**
-     * ⭐ 标准Android定位
-     */
     private fun startStandardLocation() {
         val client = fusedLocationClient ?: return
         val ctx = context ?: return
@@ -164,9 +153,6 @@ class LocationViewModel : ViewModel() {
         )
     }
 
-    /**
-     * ⭐ 鸿蒙系统定位适配
-     */
     private fun startHarmonyLocation() {
         val ctx = context ?: return
         val manager = locationManager ?: return
@@ -175,41 +161,10 @@ class LocationViewModel : ViewModel() {
             return
         }
 
-        // 鸿蒙4系统建议使用多种Provider
         try {
-            // 1. 使用GPS Provider
             if (manager.isProviderEnabled(LocationManager.GPS_PROVIDER)) {
                 manager.requestLocationUpdates(
                     LocationManager.GPS_PROVIDER,
-                    1000L,      // 1秒
-                    1f,         // 1米
-                    harmonyLocationListener,
-                    Looper.getMainLooper()
-                )
-            }
-
-            // 2. 使用Network Provider辅助
-            if (manager.isProviderEnabled(LocationManager.NETWORK_PROVIDER)) {
-                manager.requestLocationUpdates(
-                    LocationManager.NETWORK_PROVIDER,
-                    2000L,      // 2秒
-                    10f,        // 10米
-                    harmonyLocationListener,
-                    Looper.getMainLooper()
-                )
-            }
-
-            // 3. 同时尝试FusedLocationProvider
-            try {
-                startStandardLocation()
-            } catch (e: Exception) {
-                // FusedLocation在鸿蒙上可能不可用，忽略
-            }
-
-            // 4. 鸿蒙4专用：使用Passive Provider
-            if (manager.isProviderEnabled(LocationManager.PASSIVE_PROVIDER)) {
-                manager.requestLocationUpdates(
-                    LocationManager.PASSIVE_PROVIDER,
                     1000L,
                     1f,
                     harmonyLocationListener,
@@ -217,7 +172,22 @@ class LocationViewModel : ViewModel() {
                 )
             }
 
-            // 5. 如果GPS未开启，提示用户
+            if (manager.isProviderEnabled(LocationManager.NETWORK_PROVIDER)) {
+                manager.requestLocationUpdates(
+                    LocationManager.NETWORK_PROVIDER,
+                    2000L,
+                    10f,
+                    harmonyLocationListener,
+                    Looper.getMainLooper()
+                )
+            }
+
+            try {
+                startStandardLocation()
+            } catch (e: Exception) {
+                // ignore
+            }
+
             if (!manager.isProviderEnabled(LocationManager.GPS_PROVIDER)) {
                 _state.value = _state.value.copy(
                     errorMessage = "请开启GPS定位（鸿蒙系统）"
@@ -225,7 +195,6 @@ class LocationViewModel : ViewModel() {
             }
 
         } catch (e: Exception) {
-            // 鸿蒙定位失败，尝试标准方式
             try {
                 startStandardLocation()
             } catch (e2: Exception) {
@@ -236,9 +205,6 @@ class LocationViewModel : ViewModel() {
         }
     }
 
-    /**
-     * 卫星数据模拟
-     */
     private fun startSatelliteSimulation() {
         viewModelScope.launch {
             var count = 8
@@ -277,12 +243,9 @@ class LocationViewModel : ViewModel() {
         }
     }
 
-    /**
-     * 超时检查
-     */
     private fun startTimeoutCheck() {
         viewModelScope.launch {
-            delay(20000) // 20秒
+            delay(20000)
             if (_state.value.location == null && _state.value.isActive) {
                 val msg = if (isHarmonyOS) {
                     "定位超时，请检查GPS设置（鸿蒙系统）"
@@ -298,14 +261,12 @@ class LocationViewModel : ViewModel() {
     }
 
     fun stopLocation() {
-        val ctx = context ?: return
         _state.value = _state.value.copy(
             isActive = false,
             isSearching = false,
             errorMessage = ""
         )
 
-        // 停止所有定位方式
         fusedLocationClient?.removeLocationUpdates(locationCallback)
         try {
             locationManager?.removeUpdates(harmonyLocationListener)
