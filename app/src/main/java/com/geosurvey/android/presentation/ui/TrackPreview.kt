@@ -106,15 +106,25 @@ fun TrackMiniChart(points: List<TrackPoint>) {
 
             val latRange = maxLat - minLat
             val lonRange = maxLon - minLon
-            val range = max(latRange, lonRange)
+            val range = if (latRange > lonRange) latRange else lonRange
 
             if (range > 0) {
+                // 绘制网格线
+                for (i in 0..2) {
+                    val y = padding + chartHeight * (1f - i / 2f)
+                    drawLine(
+                        color = Color(0xFFE2E8F0).copy(alpha = 0.2f),
+                        start = Offset(padding, y),
+                        end = Offset(padding + chartWidth, y),
+                        strokeWidth = 1f
+                    )
+                }
+
                 // 绘制轨迹线
                 var first = true
                 val path = androidx.compose.ui.graphics.Path()
                 for (i in displayPoints.indices) {
                     val x = padding + i * step
-                    val normalizedX = (displayPoints[i].longitude - minLon) / range
                     val normalizedY = (displayPoints[i].latitude - minLat) / range
                     val y = padding + chartHeight * (1f - normalizedY.toFloat())
                     if (first) {
