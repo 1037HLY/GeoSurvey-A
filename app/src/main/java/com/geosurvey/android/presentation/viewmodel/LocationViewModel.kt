@@ -62,8 +62,6 @@ class LocationViewModel : ViewModel() {
                 )
                 if (isFirstFix) {
                     isFirstFix = false
-                    // 首次定位成功，更新卫星模拟数据
-                    updateSatelliteData()
                 }
             }
         }
@@ -102,14 +100,13 @@ class LocationViewModel : ViewModel() {
         startTime = System.currentTimeMillis()
         isFirstFix = true
 
-        // ⭐ 优化：使用更快的定位策略
+        // 定位请求
         val locationRequest = LocationRequest.Builder(
-            Priority.PRIORITY_HIGH_ACCURACY, 1000  // 1秒更新
+            Priority.PRIORITY_HIGH_ACCURACY, 1000
         ).apply {
-            setMinUpdateIntervalMillis(500)        // 最小500ms
-            setMaxUpdateDelayMillis(3000)          // 最大延迟3秒
-            setWaitForAccurateLocation(false)      // 不等待高精度
-            setGranularity(Priority.PRIORITY_HIGH_ACCURACY)
+            setMinUpdateIntervalMillis(500)
+            setMaxUpdateDelayMillis(3000)
+            setWaitForAccurateLocation(false)
         }.build()
 
         client.requestLocationUpdates(
@@ -118,32 +115,10 @@ class LocationViewModel : ViewModel() {
             Looper.getMainLooper()
         )
 
-        // ⭐ 鸿蒙系统兼容：使用低功耗定位辅助
-        if (isHarmonyOS()) {
-            // 鸿蒙系统使用更积极的定位策略
-            val fallbackRequest = LocationRequest.Builder(
-                Priority.PRIORITY_BALANCED_POWER_ACCURACY, 3000
-            ).apply {
-                setMinUpdateIntervalMillis(1000)
-            }.build()
-            // 如果高精度定位超时，使用平衡模式
-            viewModelScope.launch {
-                delay(8000) // 8秒后如果还没定位成功
-                if (_state.value.location == null && _state.value.isActive) {
-                    client.requestLocationUpdates(
-                        fallbackRequest,
-                        locationCallback,
-                        Looper.getMainLooper()
-                    )
-                }
-            }
-        }
-
-        // 模拟卫星数据（实际应该使用GnssStatus）
+        // 模拟卫星数据
         viewModelScope.launch {
             var count = 8
             while (_state.value.isActive) {
-                // 模拟卫星数据随定位状态变化
                 val hasFix = _state.value.location != null
                 val baseCount = if (hasFix) 8 else 4
                 count = baseCount + (Math.random() * 12).toInt()
@@ -177,16 +152,12 @@ class LocationViewModel : ViewModel() {
             }
         }
 
-        // ⭐ 超时提示
+        // 超时提示
         viewModelScope.launch {
-            delay(15000) // 15秒后
+            delay(15000)
             if (_state.value.location == null && _state.value.isActive) {
                 _state.value = _state.value.copy(
-                    errorMessage = if (isHarmonyOS()) {
-                        "定位超时，请检查位置权限和GPS设置（鸿蒙系统）"
-                    } else {
-                        "定位超时，请检查位置权限和GPS设置"
-                    },
+                    errorMessage = "定位超时，请检查GPS设置",
                     isSearching = false
                 )
             }
@@ -200,25 +171,6 @@ class LocationViewModel : ViewModel() {
             errorMessage = ""
         )
         fusedLocationClient?.removeLocationUpdates(locationCallback)
-    }
-
-    private fun updateSatelliteData() {
-        // 首次定位成功后更新卫星数据
-        // 实际数据由模拟循环更新
-    }
-
-    // ⭐ 检测是否为鸿蒙系统
-    private fun isHarmonyOS(): Boolean {
-        return try {
-            val manufacturer = Build.MANUFACTURER
-            val brand = Build.BRAND
-            manufacturer.equals("huawei", ignoreCase = true) ||
-            brand.equals("huawei", ignoreCase = true) ||
-            Build.DISPLAY.contains("HarmonyOS", ignoreCase = true) ||
-            Build.VERSION.INCREMENTAL.contains("HarmonyOS", ignoreCase = true)
-        } catch (e: Exception) {
-            false
-        }
     }
 
     override fun onCleared() {
