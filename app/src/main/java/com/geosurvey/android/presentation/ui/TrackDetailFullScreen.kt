@@ -109,9 +109,9 @@ fun TrackDetailFullScreen(
                     modifier = Modifier.fillMaxWidth(),
                     horizontalArrangement = Arrangement.SpaceEvenly
                 ) {
-                    StatItemFull("总里程", String.format("%.2f km", stats.totalDistance / 1000), PrimaryBlue)
-                    StatItemFull("用时", stats.totalTime, SecondaryGreen)
-                    StatItemFull("点数", "${stats.pointCount}", AccentPurple)
+                    TrackStatItem("总里程", String.format("%.2f km", stats.totalDistance / 1000), PrimaryBlue)
+                    TrackStatItem("用时", stats.totalTime, SecondaryGreen)
+                    TrackStatItem("点数", "${stats.pointCount}", AccentPurple)
                 }
 
                 Spacer(modifier = Modifier.height(8.dp))
@@ -121,8 +121,8 @@ fun TrackDetailFullScreen(
                     modifier = Modifier.fillMaxWidth(),
                     horizontalArrangement = Arrangement.SpaceEvenly
                 ) {
-                    StatItemFull("平均速度", String.format("%.1f km/h", stats.avgSpeed), Color(0xFF0F172A))
-                    StatItemFull("最大速度", String.format("%.1f km/h", stats.maxSpeed), Color(0xFF0F172A))
+                    TrackStatItem("平均速度", String.format("%.1f km/h", stats.avgSpeed), Color(0xFF0F172A))
+                    TrackStatItem("最大速度", String.format("%.1f km/h", stats.maxSpeed), Color(0xFF0F172A))
                 }
 
                 Spacer(modifier = Modifier.height(8.dp))
@@ -132,8 +132,8 @@ fun TrackDetailFullScreen(
                     modifier = Modifier.fillMaxWidth(),
                     horizontalArrangement = Arrangement.SpaceEvenly
                 ) {
-                    StatItemFull("最大海拔", String.format("%.1f m", stats.maxAltitude), Color(0xFFEF4444))
-                    StatItemFull("最小海拔", String.format("%.1f m", stats.minAltitude), Color(0xFF0EA5E9))
+                    TrackStatItem("最大海拔", String.format("%.1f m", stats.maxAltitude), Color(0xFFEF4444))
+                    TrackStatItem("最小海拔", String.format("%.1f m", stats.minAltitude), Color(0xFF0EA5E9))
                 }
 
                 Spacer(modifier = Modifier.height(8.dp))
@@ -143,8 +143,8 @@ fun TrackDetailFullScreen(
                     modifier = Modifier.fillMaxWidth(),
                     horizontalArrangement = Arrangement.SpaceEvenly
                 ) {
-                    StatItemFull("累计爬升", String.format("%.1f m", stats.totalAscent), Color(0xFF10B981))
-                    StatItemFull("累计下降", String.format("%.1f m", stats.totalDescent), Color(0xFFEF4444))
+                    TrackStatItem("累计爬升", String.format("%.1f m", stats.totalAscent), Color(0xFF10B981))
+                    TrackStatItem("累计下降", String.format("%.1f m", stats.totalDescent), Color(0xFFEF4444))
                 }
             }
         }
@@ -171,8 +171,9 @@ fun TrackDetailFullScreen(
     }
 }
 
+// ⭐ 重命名为 TrackStatItem
 @Composable
-fun StatItemFull(label: String, value: String, color: Color) {
+fun TrackStatItem(label: String, value: String, color: Color) {
     Column(horizontalAlignment = Alignment.CenterHorizontally) {
         Text(
             text = value,
@@ -220,7 +221,7 @@ fun TrackFullChart(points: List<TrackPoint>) {
 
             val latRange = maxLat - minLat
             val lonRange = maxLon - minLon
-            val range = max(latRange, lonRange)
+            val range = if (latRange > lonRange) latRange else lonRange
 
             if (range > 0) {
                 // 绘制网格线
@@ -299,14 +300,6 @@ fun TrackFullChart(points: List<TrackPoint>) {
                     color = ErrorRed.copy(alpha = 0.3f),
                     radius = 10f,
                     center = Offset(endX, endY)
-                )
-
-                // 位置标签
-                // 使用点代替文字
-                drawCircle(
-                    color = Color.White.copy(alpha = 0.3f),
-                    radius = 2f,
-                    center = Offset(padding + chartWidth * 0.1f, padding + chartHeight * 0.05f)
                 )
             }
         } else if (points.size == 1) {
@@ -397,8 +390,8 @@ fun calculateTrackStats(points: List<TrackPoint>): TrackStats {
     val avgSpeed = if (speedCount > 0) totalSpeed / speedCount else 0.0
 
     // 海拔
-    var maxAltitude = -Double.MAX_VALUE
-    var minAltitude = Double.MAX_VALUE
+    var maxAltitude = 0.0
+    var minAltitude = 0.0
     var hasAltitude = false
     for (point in points) {
         point.altitude?.let {
