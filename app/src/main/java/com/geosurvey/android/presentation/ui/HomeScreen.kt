@@ -61,9 +61,10 @@ fun HomeScreen() {
 
     LaunchedEffect(state.location) {
         state.location?.let { location ->
-            // ⭐ 修复第66行：直接使用 toFloat()，不需要显式类型声明
+            // ⭐ 所有值都确保是 Float 类型
             val alt = location.altitude?.toFloat() ?: 0f
             val speed = location.speed?.let { it * 3.6 } ?: 0f
+            // ⭐ 第70行：显式转换为 Float
             val snr = state.averageSnr.toFloat()
             
             altitudeHistory.add(alt)
