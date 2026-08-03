@@ -16,9 +16,9 @@ class WatermarkHelper(private val context: Context) {
         val showLocation: Boolean = true,
         val showAttitude: Boolean = true,
         val showNote: Boolean = true,
-        val textSize: Float = 40f,
+        val textSize: Float = 56f,  // 从40改为56
         val position: Position = Position.BOTTOM_RIGHT,
-        val transparency: Float = 0.7f
+        val transparency: Float = 0.8f
     )
 
     enum class Position {
@@ -29,7 +29,7 @@ class WatermarkHelper(private val context: Context) {
         val latitude: Double,
         val longitude: Double,
         val altitude: Double? = null,
-        val locationName: String = "",
+        val locationName: String = "",  // 位置名称
         val dipDirection: Float? = null,
         val dipAngle: Float? = null,
         val strike: Float? = null,
@@ -49,7 +49,7 @@ class WatermarkHelper(private val context: Context) {
             alpha = (255 * config.transparency).toInt()
             isAntiAlias = true
             typeface = Typeface.create(Typeface.DEFAULT, Typeface.BOLD)
-            setShadowLayer(4f, 2f, 2f, Color.BLACK)
+            setShadowLayer(6f, 3f, 3f, Color.BLACK)
         }
 
         val lines = mutableListOf<String>()
@@ -62,12 +62,12 @@ class WatermarkHelper(private val context: Context) {
             }
         }
 
-        if (config.showTime) {
-            lines.add("🕐 ${sdf.format(Date(data.timestamp))}")
+        if (config.showLocation && data.locationName.isNotEmpty()) {
+            lines.add("📍 ${data.locationName}")  // 显示位置名称
         }
 
-        if (config.showLocation && data.locationName.isNotEmpty()) {
-            lines.add("📍 ${data.locationName}")
+        if (config.showTime) {
+            lines.add("🕐 ${sdf.format(Date(data.timestamp))}")
         }
 
         if (config.showAttitude && data.dipDirection != null) {
@@ -81,34 +81,34 @@ class WatermarkHelper(private val context: Context) {
         // 计算文字位置
         var currentY = when (config.position) {
             Position.TOP_LEFT, Position.TOP_RIGHT -> {
-                config.textSize + 40f
+                config.textSize + 60f
             }
             else -> {
-                bitmap.height - config.textSize - 40f - (lines.size - 1) * (config.textSize + 20f)
+                bitmap.height - config.textSize - 60f - (lines.size - 1) * (config.textSize + 30f)
             }
         }
 
         val startX = when (config.position) {
-            Position.TOP_LEFT, Position.BOTTOM_LEFT -> 40f
-            else -> bitmap.width - 40f
+            Position.TOP_LEFT, Position.BOTTOM_LEFT -> 50f
+            else -> bitmap.width - 50f
         }
 
         // 绘制背景
         val textWidth = lines.maxByOrNull { it.length }?.let {
             paint.measureText(it)
-        } ?: 200f
+        } ?: 300f
 
-        val bgWidth = textWidth + 80f
-        val bgHeight = lines.size * (config.textSize + 20f) + 40f
+        val bgWidth = textWidth + 100f
+        val bgHeight = lines.size * (config.textSize + 30f) + 60f
 
         val bgLeft = when (config.position) {
-            Position.TOP_LEFT, Position.BOTTOM_LEFT -> 20f
-            else -> bitmap.width - bgWidth - 20f
+            Position.TOP_LEFT, Position.BOTTOM_LEFT -> 30f
+            else -> bitmap.width - bgWidth - 30f
         }
-        val bgTop = currentY - config.textSize - 20f
+        val bgTop = currentY - config.textSize - 30f
 
-        canvas.drawRoundRect(bgLeft, bgTop, bgLeft + bgWidth, bgTop + bgHeight, 20f, 20f, Paint().apply {
-            color = Color.argb(150, 0, 0, 0)
+        canvas.drawRoundRect(bgLeft, bgTop, bgLeft + bgWidth, bgTop + bgHeight, 25f, 25f, Paint().apply {
+            color = Color.argb(180, 0, 0, 0)
             style = Paint.Style.FILL
         })
 
@@ -119,7 +119,7 @@ class WatermarkHelper(private val context: Context) {
                 else -> startX - paint.measureText(line)
             }
             canvas.drawText(line, x, currentY, paint)
-            currentY += config.textSize + 20f
+            currentY += config.textSize + 30f
         }
 
         return result
@@ -140,7 +140,7 @@ class WatermarkHelper(private val context: Context) {
             val file = File(dir, fileName)
 
             FileOutputStream(file).use { fos ->
-                bitmap.compress(Bitmap.CompressFormat.JPEG, 90, fos)
+                bitmap.compress(Bitmap.CompressFormat.JPEG, 95, fos)
             }
 
             file.absolutePath
