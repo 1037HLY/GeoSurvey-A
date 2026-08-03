@@ -11,14 +11,14 @@ import java.util.*
 class WatermarkHelper(private val context: Context) {
 
     data class WatermarkConfig(
-        val showCoordinates: Boolean = true,
-        val showTime: Boolean = true,
-        val showLocation: Boolean = true,
-        val showAttitude: Boolean = true,
-        val showNote: Boolean = true,
-        val textSize: Float = 56f,  // 从40改为56
-        val position: Position = Position.BOTTOM_RIGHT,
-        val transparency: Float = 0.8f
+        var showCoordinates: Boolean = true,
+        var showTime: Boolean = true,
+        var showLocation: Boolean = true,
+        var showAttitude: Boolean = true,
+        var showNote: Boolean = true,
+        var textSize: Float = 48f,
+        var position: Position = Position.BOTTOM_RIGHT,
+        var transparency: Float = 0.8f
     )
 
     enum class Position {
@@ -29,7 +29,7 @@ class WatermarkHelper(private val context: Context) {
         val latitude: Double,
         val longitude: Double,
         val altitude: Double? = null,
-        val locationName: String = "",  // 位置名称
+        val locationName: String = "",
         val dipDirection: Float? = null,
         val dipAngle: Float? = null,
         val strike: Float? = null,
@@ -52,8 +52,16 @@ class WatermarkHelper(private val context: Context) {
             setShadowLayer(6f, 3f, 3f, Color.BLACK)
         }
 
+        // ⭐ 修复乱码：使用中文字体
+        try {
+            val typeface = Typeface.create("sans-serif", Typeface.BOLD)
+            paint.typeface = typeface
+        } catch (e: Exception) {
+            // 使用默认字体
+        }
+
         val lines = mutableListOf<String>()
-        val sdf = SimpleDateFormat("yyyy-MM-dd HH:mm:ss", Locale.getDefault())
+        val sdf = SimpleDateFormat("yyyy-MM-dd HH:mm:ss", Locale.CHINA)
 
         if (config.showCoordinates) {
             lines.add("📍 ${String.format("%.6f", data.latitude)}, ${String.format("%.6f", data.longitude)}")
@@ -62,8 +70,8 @@ class WatermarkHelper(private val context: Context) {
             }
         }
 
-        if (config.showLocation && data.locationName.isNotEmpty()) {
-            lines.add("📍 ${data.locationName}")  // 显示位置名称
+        if (config.showLocation && data.locationName.isNotEmpty() && data.locationName != "获取位置失败" && data.locationName != "无网络连接") {
+            lines.add("📍 ${data.locationName}")
         }
 
         if (config.showTime) {
@@ -76,6 +84,10 @@ class WatermarkHelper(private val context: Context) {
 
         if (config.showNote && data.note.isNotEmpty()) {
             lines.add("📝 ${data.note}")
+        }
+
+        if (lines.isEmpty()) {
+            lines.add("📍 ${String.format("%.6f", data.latitude)}, ${String.format("%.6f", data.longitude)}")
         }
 
         // 计算文字位置
@@ -112,7 +124,6 @@ class WatermarkHelper(private val context: Context) {
             style = Paint.Style.FILL
         })
 
-        // 绘制每行文字
         lines.forEach { line ->
             val x = when (config.position) {
                 Position.TOP_LEFT, Position.BOTTOM_LEFT -> startX
@@ -140,7 +151,7 @@ class WatermarkHelper(private val context: Context) {
             val file = File(dir, fileName)
 
             FileOutputStream(file).use { fos ->
-                bitmap.compress(Bitmap.CompressFormat.JPEG, 95, fos)
+                bitmap.compress(Bitmap.CompressFormat.JPEG, 92, fos)
             }
 
             file.absolutePath
