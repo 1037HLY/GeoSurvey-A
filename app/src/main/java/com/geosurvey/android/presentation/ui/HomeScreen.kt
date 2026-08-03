@@ -48,9 +48,10 @@ fun HomeScreen() {
     var showSatelliteDetail by remember { mutableStateOf(false) }
     var showAboutDialog by remember { mutableStateOf(false) }
 
-    val altitudeHistory = remember { mutableStateListOf<Float>() }
-    val speedHistory = remember { mutableStateListOf<Float>() }
-    val snrHistory = remember { mutableStateListOf<Float>() }
+    // ⭐ 全部改为 Double 类型
+    val altitudeHistory = remember { mutableStateListOf<Double>() }
+    val speedHistory = remember { mutableStateListOf<Double>() }
+    val snrHistory = remember { mutableStateListOf<Double>() }
 
     val infiniteTransition = rememberInfiniteTransition()
     val pulse by infiniteTransition.animateFloat(
@@ -62,12 +63,12 @@ fun HomeScreen() {
         )
     )
 
-    // ⭐ 第73行：使用0f避免类型问题
+    // ⭐ 使用 Double 类型
     LaunchedEffect(state.location) {
         state.location?.let { location ->
-            val alt = location.altitude?.toFloat() ?: 0f
-            val speed = location.speed?.let { it * 3.6 } ?: 0f
-            val snr = 0f  // ⭐ 第73行
+            val alt = location.altitude ?: 0.0
+            val speed = location.speed?.let { it * 3.6 } ?: 0.0
+            val snr = state.averageSnr.toDouble()
             
             altitudeHistory.add(alt)
             speedHistory.add(speed)
@@ -252,7 +253,7 @@ fun HomeScreen() {
             data = altitudeHistory,
             color = Color(0xFF0EA5E9),
             unit = "m",
-            maxValue = 2000f
+            maxValue = 2000.0
         )
 
         Spacer(modifier = Modifier.height(6.dp))
@@ -262,7 +263,7 @@ fun HomeScreen() {
             data = speedHistory,
             color = Color(0xFF10B981),
             unit = "km/h",
-            maxValue = 50f
+            maxValue = 50.0
         )
 
         Spacer(modifier = Modifier.height(6.dp))
@@ -272,7 +273,7 @@ fun HomeScreen() {
             data = snrHistory,
             color = Color(0xFF8B5CF6),
             unit = "dBHz",
-            maxValue = 50f
+            maxValue = 50.0
         )
 
         Spacer(modifier = Modifier.height(12.dp))
