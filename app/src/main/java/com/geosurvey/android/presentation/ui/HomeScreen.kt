@@ -64,7 +64,7 @@ fun HomeScreen() {
             // ⭐ 所有值都确保是 Float 类型
             val alt = location.altitude?.toFloat() ?: 0f
             val speed = location.speed?.let { it * 3.6 } ?: 0f
-            // ⭐ 第70行：显式转换为 Float
+            // ⭐ 第71行：显式转换为 Float
             val snr = state.averageSnr.toFloat()
             
             altitudeHistory.add(alt)
