@@ -30,7 +30,9 @@ data class CoordinateState(
     val locationName: String = "",
     val customZone: String = "",
     val customCentralMeridian: String = "",
-    val useCustomProjection: Boolean = false
+    val useCustomProjection: Boolean = false,
+    // ⭐ 添加高斯转经纬度结果
+    val gaussToLatLonResult: String = ""
 )
 
 class CoordinateViewModel(
@@ -168,7 +170,8 @@ class CoordinateViewModel(
                 wgs84 = wgs84,
                 cgcs2000 = cgcs2000,
                 gcj02 = gcj02,
-                gaussCoord = gaussCoord
+                gaussCoord = gaussCoord,
+                gaussToLatLonResult = ""
             )
         } catch (e: Exception) {
             // 转换失败
@@ -220,27 +223,32 @@ class CoordinateViewModel(
         }
     }
 
-    // ⭐ 修复开关功能 - 确保切换时正确更新
+    // ⭐ 切换自动/自定义投影参数
     fun toggleUseCustomProjection() {
         val newValue = !_state.value.useCustomProjection
         _state.value = _state.value.copy(
             useCustomProjection = newValue
         )
-        
-        val wgs84 = _state.value.wgs84
-        if (wgs84 != null) {
-            if (newValue) {
-                calculateWithCustomParams()
-            } else {
-                val gaussCoord = GaussProjection.blhToGauss(
-                    wgs84.latitude,
-                    wgs84.longitude
-                )
-                _state.value = _state.value.copy(
-                    gaussCoord = gaussCoord
-                )
-            }
-        }
+        // 不自动重新计算，让用户手动点击应用
+    }
+
+    // ⭐ 更新高斯投影结果（从经纬度转换）
+    fun updateGaussResult(gaussCoord: GaussProjection.GaussCoord) {
+        _state.value = _state.value.copy(
+            gaussCoord = gaussCoord
+        )
+    }
+
+    // ⭐ 更新WGS84结果（从高斯投影转换）
+    fun updateWgs84Result(coord: CoordinateConverter.Coordinate) {
+        _state.value = _state.value.copy(
+            wgs84 = coord,
+            gaussToLatLonResult = String.format(
+                "%.6f°, %.6f°",
+                coord.latitude,
+                coord.longitude
+            )
+        )
     }
 
     fun saveRecord() {
@@ -267,7 +275,8 @@ class CoordinateViewModel(
                 locationName = "",
                 inputLat = "",
                 inputLon = "",
-                inputAlt = ""
+                inputAlt = "",
+                gaussToLatLonResult = ""
             )
         }
     }
