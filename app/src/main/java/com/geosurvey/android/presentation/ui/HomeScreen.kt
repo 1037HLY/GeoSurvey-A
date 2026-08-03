@@ -61,10 +61,10 @@ fun HomeScreen() {
 
     LaunchedEffect(state.location) {
         state.location?.let { location ->
-            // ⭐ 第68行：显式转换为 Float
-            val alt: Float = location.altitude?.toFloat() ?: 0f
-            val speed: Float = location.speed?.let { it * 3.6 } ?: 0f
-            val snr: Float = state.averageSnr.toFloat()
+            // ⭐ 修复第66行：直接使用 toFloat()，不需要显式类型声明
+            val alt = location.altitude?.toFloat() ?: 0f
+            val speed = location.speed?.let { it * 3.6 } ?: 0f
+            val snr = state.averageSnr.toFloat()
             
             altitudeHistory.add(alt)
             speedHistory.add(speed)
