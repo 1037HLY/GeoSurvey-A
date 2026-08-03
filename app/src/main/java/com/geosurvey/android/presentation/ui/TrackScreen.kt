@@ -17,6 +17,7 @@ import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
+import androidx.compose.ui.window.Dialog
 import androidx.navigation.NavController
 import com.geosurvey.android.GeoSurveyApplication
 import com.geosurvey.android.data.model.TrackPoint
@@ -47,6 +48,8 @@ fun TrackScreen(
     val filteredPoints by viewModel.filteredPoints.collectAsState()
 
     var showExportDialog by remember { mutableStateOf(false) }
+    // ⭐ 全屏轨迹详情状态
+    var showFullTrackDetail by remember { mutableStateOf(false) }
 
     val displayPoints = if (selectedDate != null) filteredPoints else trackPoints
 
@@ -147,6 +150,16 @@ fun TrackScreen(
         }
 
         Spacer(modifier = Modifier.height(12.dp))
+
+        // ⭐ 轨迹预览卡片
+        if (trackPoints.isNotEmpty()) {
+            TrackPreviewCard(
+                points = trackPoints,
+                onClick = { showFullTrackDetail = true },
+                isRecording = isRecording
+            )
+            Spacer(modifier = Modifier.height(12.dp))
+        }
 
         // 日期筛选
         if (availableDates.isNotEmpty()) {
@@ -348,6 +361,28 @@ fun TrackScreen(
                 }
             }
         )
+    }
+
+    // ⭐ 全屏轨迹详情对话框
+    if (showFullTrackDetail) {
+        Dialog(
+            onDismissRequest = { showFullTrackDetail = false }
+        ) {
+            Surface(
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .fillMaxHeight(0.95f)
+                    .padding(8.dp),
+                shape = RoundedCornerShape(16.dp),
+                color = Color(0xFF0F172A)
+            ) {
+                TrackDetailFullScreen(
+                    points = trackPoints,
+                    isRecording = isRecording,
+                    onDismiss = { showFullTrackDetail = false }
+                )
+            }
+        }
     }
 }
 
