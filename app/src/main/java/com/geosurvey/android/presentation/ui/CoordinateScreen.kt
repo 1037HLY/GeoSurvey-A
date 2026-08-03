@@ -37,6 +37,13 @@ import kotlinx.coroutines.launch
 import java.text.SimpleDateFormat
 import java.util.*
 
+// ⭐ 转换方向枚举移到顶层
+enum class ConvertDirection {
+    LATLON_TO_GAUSS,
+    GAUSS_TO_LATLON
+}
+
+@OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun CoordinateScreen() {
     val context = LocalContext.current
@@ -56,10 +63,6 @@ fun CoordinateScreen() {
     var tempCentralMeridian by remember { mutableStateOf("") }
 
     // 转换方向选择
-    enum class ConvertDirection {
-        LATLON_TO_GAUSS,  // 经纬度→高斯投影
-        GAUSS_TO_LATLON   // 高斯投影→经纬度
-    }
     var convertDirection by remember { mutableStateOf(ConvertDirection.LATLON_TO_GAUSS) }
 
     // 高斯输入
@@ -124,7 +127,6 @@ fun CoordinateScreen() {
     // 执行高斯转换
     fun performGaussConversion() {
         if (convertDirection == ConvertDirection.LATLON_TO_GAUSS) {
-            // 经纬度→高斯投影
             val lat = state.inputLat.toDoubleOrNull()
             val lon = state.inputLon.toDoubleOrNull()
             if (lat == null || lon == null) {
@@ -137,7 +139,6 @@ fun CoordinateScreen() {
             toastMessage = "✅ 转换完成"
             showToast = true
         } else {
-            // 高斯投影→经纬度
             val x = gaussInputX.toDoubleOrNull()
             val y = gaussInputY.toDoubleOrNull()
             if (x == null || y == null) {
@@ -213,7 +214,7 @@ fun CoordinateScreen() {
                     )
                 }
 
-                // ========== 投影参数设置（按钮方式） ==========
+                // 投影参数设置（按钮方式）
                 Spacer(modifier = Modifier.height(12.dp))
 
                 Divider(
@@ -308,23 +309,49 @@ fun CoordinateScreen() {
             )
             Spacer(modifier = Modifier.height(8.dp))
 
-            // 转换方向选择
+            // ⭐ 转换方向选择 - 使用Button替代FilterChip
             Row(
                 modifier = Modifier.fillMaxWidth(),
                 horizontalArrangement = Arrangement.spacedBy(8.dp)
             ) {
-                FilterChip(
-                    selected = convertDirection == ConvertDirection.LATLON_TO_GAUSS,
+                Button(
                     onClick = { convertDirection = ConvertDirection.LATLON_TO_GAUSS },
-                    label = { Text("经纬→高斯", fontSize = 12.sp) },
-                    modifier = Modifier.weight(1f)
-                )
-                FilterChip(
-                    selected = convertDirection == ConvertDirection.GAUSS_TO_LATLON,
+                    modifier = Modifier.weight(1f),
+                    colors = ButtonDefaults.buttonColors(
+                        containerColor = if (convertDirection == ConvertDirection.LATLON_TO_GAUSS)
+                            PrimaryBlue
+                        else
+                            Color(0xFFE2E8F0)
+                    ),
+                    shape = RoundedCornerShape(8.dp)
+                ) {
+                    Text(
+                        "经纬→高斯",
+                        color = if (convertDirection == ConvertDirection.LATLON_TO_GAUSS)
+                            Color.White
+                        else
+                            Color(0xFF475569)
+                    )
+                }
+                Button(
                     onClick = { convertDirection = ConvertDirection.GAUSS_TO_LATLON },
-                    label = { Text("高斯→经纬", fontSize = 12.sp) },
-                    modifier = Modifier.weight(1f)
-                )
+                    modifier = Modifier.weight(1f),
+                    colors = ButtonDefaults.buttonColors(
+                        containerColor = if (convertDirection == ConvertDirection.GAUSS_TO_LATLON)
+                            PrimaryBlue
+                        else
+                            Color(0xFFE2E8F0)
+                    ),
+                    shape = RoundedCornerShape(8.dp)
+                ) {
+                    Text(
+                        "高斯→经纬",
+                        color = if (convertDirection == ConvertDirection.GAUSS_TO_LATLON)
+                            Color.White
+                        else
+                            Color(0xFF475569)
+                    )
+                }
             }
 
             Spacer(modifier = Modifier.height(8.dp))
@@ -448,7 +475,6 @@ fun CoordinateScreen() {
                     )
                 }
 
-                // 带号输入
                 OutlinedTextField(
                     value = state.customZone,
                     onValueChange = { viewModel.updateCustomZone(it) },
@@ -472,7 +498,6 @@ fun CoordinateScreen() {
                     Text("🔄 转换")
                 }
 
-                // 显示转换结果
                 if (state.wgs84 != null && state.wgs84!!.latitude != 0.0) {
                     Spacer(modifier = Modifier.height(8.dp))
                     Text(
