@@ -7,7 +7,6 @@ import androidx.activity.result.contract.ActivityResultContracts
 import androidx.compose.animation.core.*
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.*
-import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material3.*
 import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
@@ -67,6 +66,7 @@ fun HomeScreen() {
             val speed = location.speed?.let { it * 3.6 } ?: 0f
             val snr = state.averageSnr
             
+            // ⭐ 修复：使用 toFloat() 确保类型匹配
             altitudeHistory = (altitudeHistory + alt).takeLast(50)
             speedHistory = (speedHistory + speed).takeLast(50)
             snrHistory = (snrHistory + snr).takeLast(50)
@@ -220,7 +220,7 @@ fun HomeScreen() {
 
         Spacer(modifier = Modifier.height(12.dp))
 
-        // ⭐ 传感器实时曲线
+        // 传感器实时曲线
         Text(
             text = "📊 传感器实时曲线",
             fontSize = 16.sp,
@@ -268,16 +268,25 @@ fun HomeScreen() {
         )
     }
 
-    // ⭐ 全屏卫星详情对话框
+    // 全屏卫星详情对话框
     if (showSatelliteDetail) {
         Dialog(
-            onDismissRequest = { showSatelliteDetail = false },
-            usePlatformDefaultWidth = false
+            onDismissRequest = { showSatelliteDetail = false }
         ) {
-            SatelliteFullScreen(
-                state = state,
-                onDismiss = { showSatelliteDetail = false }
-            )
+            // ⭐ 使用 Surface 包裹，不设置 usePlatformDefaultWidth
+            Surface(
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .fillMaxHeight()
+                    .padding(8.dp),
+                shape = RoundedCornerShape(16.dp),
+                color = Color(0xFF0F172A)
+            ) {
+                SatelliteFullScreen(
+                    state = state,
+                    onDismiss = { showSatelliteDetail = false }
+                )
+            }
         }
     }
 }
