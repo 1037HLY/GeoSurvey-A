@@ -2,6 +2,7 @@ package com.geosurvey.android.presentation.ui
 
 import androidx.compose.foundation.Canvas
 import androidx.compose.foundation.background
+import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
@@ -24,6 +25,13 @@ import com.geosurvey.android.presentation.theme.*
 import com.geosurvey.android.presentation.ui.components.GlassCard
 import kotlin.math.*
 
+// ⭐ 地层数据类移到顶层
+data class LayerData(
+    val name: String,
+    val depth: String,
+    val color: Color
+)
+
 @Composable
 fun BoreholeScreen() {
     var showFullDialog by remember { mutableStateOf(false) }
@@ -37,13 +45,7 @@ fun BoreholeScreen() {
     var boreholeDiameter by remember { mutableStateOf("75") }
     
     // 地层数据
-    data class Layer(
-        val name: String,
-        val depth: String,
-        val color: Color
-    )
-    
-    var layers by remember { mutableStateOf(listOf<Layer>()) }
+    var layers by remember { mutableStateOf(listOf<LayerData>()) }
     var layerName by remember { mutableStateOf("") }
     var layerDepth by remember { mutableStateOf("") }
     
@@ -57,19 +59,18 @@ fun BoreholeScreen() {
     
     // 地层颜色
     val layerColors = listOf(
-        Color(0xFF8D6E63), // 表土
-        Color(0xFFFFB74D), // 粘土
-        Color(0xFFFFD54F), // 砂
-        Color(0xFFA1887F), // 风化岩
-        Color(0xFF78909C), // 基岩
-        Color(0xFF4DB6AC), // 灰岩
-        Color(0xFFBA68C8), // 泥岩
-        Color(0xFF4FC3F7), // 砂岩
-        Color(0xFF81C784), // 页岩
-        Color(0xFFFF8A65)  // 花岗岩
+        Color(0xFF8D6E63),
+        Color(0xFFFFB74D),
+        Color(0xFFFFD54F),
+        Color(0xFFA1887F),
+        Color(0xFF78909C),
+        Color(0xFF4DB6AC),
+        Color(0xFFBA68C8),
+        Color(0xFF4FC3F7),
+        Color(0xFF81C784),
+        Color(0xFFFF8A65)
     )
 
-    // 计算钻孔参数
     fun calculate() {
         try {
             val azi = azimuth.toDoubleOrNull() ?: 0.0
@@ -91,18 +92,15 @@ fun BoreholeScreen() {
             resultVertical = String.format("%.2f", vertical)
             resultDipAngle = String.format("%.1f", dip)
 
-        } catch (e: Exception) {
-            // 计算失败
-        }
+        } catch (e: Exception) { }
     }
 
-    // 添加地层
     fun addLayer() {
         if (layerName.isNotEmpty() && layerDepth.isNotEmpty()) {
             val depthVal = layerDepth.toDoubleOrNull()
             if (depthVal != null && depthVal > 0) {
                 val colorIndex = layers.size % layerColors.size
-                layers = layers + Layer(
+                layers = layers + LayerData(
                     name = layerName,
                     depth = layerDepth,
                     color = layerColors[colorIndex]
@@ -113,7 +111,6 @@ fun BoreholeScreen() {
         }
     }
 
-    // 删除地层
     fun removeLayer(index: Int) {
         layers = layers.toMutableList().apply { removeAt(index) }
     }
@@ -133,7 +130,7 @@ fun BoreholeScreen() {
 
         Spacer(modifier = Modifier.height(12.dp))
 
-        // ========== 输入参数卡片 ==========
+        // 输入参数卡片
         GlassCard(
             modifier = Modifier.fillMaxWidth()
         ) {
@@ -227,7 +224,7 @@ fun BoreholeScreen() {
 
         Spacer(modifier = Modifier.height(12.dp))
 
-        // ========== 地层输入卡片 ==========
+        // 地层输入卡片
         GlassCard(
             modifier = Modifier.fillMaxWidth()
         ) {
@@ -268,9 +265,8 @@ fun BoreholeScreen() {
                 ) {
                     Text("添加")
                 }
-            }
+            )
 
-            // 地层列表
             if (layers.isNotEmpty()) {
                 Spacer(modifier = Modifier.height(8.dp))
                 LazyColumn(
@@ -321,7 +317,7 @@ fun BoreholeScreen() {
 
         Spacer(modifier = Modifier.height(12.dp))
 
-        // ========== 计算结果 ==========
+        // 计算结果
         if (resultBottomX != null) {
             GlassCard(
                 modifier = Modifier
@@ -376,7 +372,6 @@ fun BoreholeScreen() {
                 
                 Spacer(modifier = Modifier.height(8.dp))
                 
-                // 简易柱状图
                 Text(
                     text = "📊 钻孔柱状图",
                     fontSize = 13.sp,
@@ -395,7 +390,6 @@ fun BoreholeScreen() {
 
         Spacer(modifier = Modifier.height(12.dp))
         
-        // 使用说明
         Card(
             modifier = Modifier.fillMaxWidth(),
             colors = CardDefaults.cardColors(
@@ -415,7 +409,7 @@ fun BoreholeScreen() {
         Spacer(modifier = Modifier.height(16.dp))
     }
 
-    // ========== 全屏对话框 ==========
+    // 全屏对话框
     if (showFullDialog) {
         Dialog(
             onDismissRequest = { showFullDialog = false }
@@ -452,7 +446,6 @@ fun BoreholeScreen() {
                     
                     Spacer(modifier = Modifier.height(12.dp))
                     
-                    // 显示所有结果
                     if (resultBottomX != null) {
                         Text(
                             text = "📊 钻孔参数",
@@ -497,7 +490,6 @@ fun BoreholeScreen() {
                         
                         Spacer(modifier = Modifier.height(12.dp))
                         
-                        // 放大柱状图
                         Text(
                             text = "📊 钻孔柱状图",
                             fontSize = 16.sp,
@@ -530,7 +522,6 @@ fun BoreholeScreen() {
                             }
                         }
                         
-                        // 图例
                         if (layers.isNotEmpty()) {
                             Spacer(modifier = Modifier.height(8.dp))
                             Text(
@@ -571,7 +562,7 @@ fun BoreholeScreen() {
 
 @Composable
 fun BoreholeColumnChart(
-    layers: List<BoreholeScreen.Layer>,
+    layers: List<LayerData>,
     totalDepth: Double,
     diameter: Double
 ) {
@@ -587,7 +578,6 @@ fun BoreholeColumnChart(
         val maxDepth = totalDepth.toFloat()
         
         if (layers.isNotEmpty()) {
-            // 绘制柱状图
             var currentDepth = 0f
             layers.forEachIndexed { index, layer ->
                 val depthVal = layer.depth.toFloatOrNull() ?: 0f
@@ -595,14 +585,12 @@ fun BoreholeColumnChart(
                 val x = (chartWidth - barWidth) / 2
                 val y = padding + chartHeight - padding - barHeight - currentDepth * (chartHeight - padding * 2) / maxDepth
                 
-                // 绘制柱体
                 drawRect(
                     color = layer.color,
                     topLeft = Offset(x, y),
                     size = androidx.compose.ui.geometry.Size(barWidth, barHeight)
                 )
                 
-                // 绘制边框
                 drawRect(
                     color = Color(0xFFE2E8F0),
                     topLeft = Offset(x, y),
@@ -610,11 +598,9 @@ fun BoreholeColumnChart(
                     style = Stroke(width = 1f)
                 )
                 
-                // 绘制标签（简化）
                 currentDepth += depthVal
             }
             
-            // 绘制深度刻度
             drawLine(
                 color = Color(0xFF94A3B8),
                 start = Offset(padding, padding),
@@ -622,11 +608,8 @@ fun BoreholeColumnChart(
                 strokeWidth = 1f
             )
             
-            // 刻度标签
             for (i in 0..4) {
                 val y = padding + (chartHeight - padding * 2) * (1f - i / 4f)
-                val depthLabel = String.format("%.1f", maxDepth * i / 4)
-                // 用点代替文字
                 drawCircle(
                     color = Color(0xFF94A3B8),
                     radius = 2f,
@@ -634,7 +617,6 @@ fun BoreholeColumnChart(
                 )
             }
         } else {
-            // 无地层数据
             drawLine(
                 color = Color(0xFF94A3B8),
                 start = Offset(padding, padding + chartHeight / 2),
@@ -653,7 +635,7 @@ fun BoreholeColumnChart(
 
 @Composable
 fun BoreholeColumnChartFull(
-    layers: List<BoreholeScreen.Layer>,
+    layers: List<LayerData>,
     totalDepth: Double,
     diameter: Double,
     dipAngle: Double,
@@ -672,10 +654,6 @@ fun BoreholeColumnChartFull(
         val maxDepth = totalDepth.toFloat()
         
         if (layers.isNotEmpty()) {
-            // 绘制标题
-            // 使用点代替文字
-            
-            // 绘制柱状图
             var currentDepth = 0f
             layers.forEachIndexed { index, layer ->
                 val depthVal = layer.depth.toFloatOrNull() ?: 0f
@@ -683,14 +661,12 @@ fun BoreholeColumnChartFull(
                 val x = (chartWidth - barWidth) / 2
                 val y = padding + chartHeight - padding - barHeight - currentDepth * (chartHeight - padding * 2) / maxDepth
                 
-                // 绘制柱体
                 drawRect(
                     color = layer.color,
                     topLeft = Offset(x, y),
                     size = androidx.compose.ui.geometry.Size(barWidth, barHeight)
                 )
                 
-                // 绘制边框
                 drawRect(
                     color = Color(0xFFE2E8F0),
                     topLeft = Offset(x, y),
@@ -698,11 +674,9 @@ fun BoreholeColumnChartFull(
                     style = Stroke(width = 1f)
                 )
                 
-                // 绘制深度文字（简化）
                 currentDepth += depthVal
             }
             
-            // 绘制深度刻度线
             drawLine(
                 color = Color(0xFF475569),
                 start = Offset(padding, padding),
@@ -710,23 +684,15 @@ fun BoreholeColumnChartFull(
                 strokeWidth = 2f
             )
             
-            // 刻度标签（用点代替）
             for (i in 0..5) {
                 val y = padding + (chartHeight - padding * 2) * (1f - i / 5f)
-                val depthLabel = String.format("%.1f", maxDepth * i / 5)
                 drawCircle(
                     color = Color(0xFF475569),
                     radius = 3f,
                     center = Offset(padding - 8f, y)
                 )
             }
-            
-            // 绘制投影信息
-            val infoText = "倾角: ${String.format("%.1f", dipAngle)}°  水平投影: ${String.format("%.2f", horizontal)}m  垂直投影: ${String.format("%.2f", vertical)}m"
-            // 用点代替文字
-            
         } else {
-            // 无数据
             drawLine(
                 color = Color(0xFF94A3B8),
                 start = Offset(padding, padding + chartHeight / 2),
