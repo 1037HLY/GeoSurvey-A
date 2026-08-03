@@ -1,6 +1,7 @@
 package com.geosurvey.android.presentation.ui
 
 import androidx.compose.foundation.Canvas
+import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.shape.CircleShape
@@ -13,7 +14,6 @@ import androidx.compose.ui.draw.clip
 import androidx.compose.ui.geometry.Offset
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.drawscope.Stroke
-import androidx.compose.ui.graphics.drawscope.rotate
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
@@ -88,7 +88,9 @@ fun SatelliteDetailScreen(
             elevation = CardDefaults.cardElevation(defaultElevation = 4.dp)
         ) {
             Box(
-                modifier = Modifier.fillMaxSize(),
+                modifier = Modifier
+                    .fillMaxSize()
+                    .background(Color(0xFF0F172A)),
                 contentAlignment = Alignment.Center
             ) {
                 PolarPlot(state)
@@ -153,34 +155,18 @@ fun PolarPlot(state: LocationState) {
             )
         }
 
-        // 绘制方向标签
-        val labels = mapOf("N" to -90f, "E" to 0f, "S" to 90f, "W" to 180f)
-        labels.forEach { (label, angleDeg) ->
-            val rad = Math.toRadians(angleDeg.toDouble())
-            val labelRadius = radius * 1.05f
-            val x = centerX + labelRadius * cos(rad).toFloat()
-            val y = centerY + labelRadius * sin(rad).toFloat()
-            // 用点代替文字（Canvas不支持直接文字）
-            drawCircle(
-                color = Color.White.copy(alpha = 0.3f),
-                radius = 2f,
-                center = Offset(x, y)
-            )
-        }
-
-        // ⭐ 绘制模拟卫星点（根据卫星数量）
+        // 绘制模拟卫星点
         val total = max(state.satelliteCount, 1)
         val gpsRatio = state.gpsCount.toFloat() / total
         val glonassRatio = state.glonassCount.toFloat() / total
         val beidouRatio = state.beidouCount.toFloat() / total
         val galileoRatio = state.galileoCount.toFloat() / total
 
-        // 生成模拟卫星位置
         val satelliteColors = listOf(
-            Color(0xFF4CAF50) to gpsRatio,      // GPS - 绿色
-            Color(0xFF2196F3) to glonassRatio,  // GLONASS - 蓝色
-            Color(0xFFF44336) to beidouRatio,   // 北斗 - 红色
-            Color(0xFFFFC107) to galileoRatio   // Galileo - 黄色
+            Color(0xFF4CAF50) to gpsRatio,
+            Color(0xFF2196F3) to glonassRatio,
+            Color(0xFFF44336) to beidouRatio,
+            Color(0xFFFFC107) to galileoRatio
         )
 
         satelliteColors.forEachIndexed { index, (color, ratio) ->
@@ -189,15 +175,15 @@ fun PolarPlot(state: LocationState) {
                 val angle = (i * 30 + index * 7) % 360
                 val rad = Math.toRadians(angle.toDouble())
                 val distance = (0.2 + 0.7 * (i.toFloat() / max(count, 1))) * radius
-                val x = centerX + distance * cos(rad).toFloat()
-                val y = centerY + distance * sin(rad).toFloat()
+                // ⭐ 修复：使用 .toFloat() 确保类型匹配
+                val x = centerX + (distance * cos(rad).toFloat())
+                val y = centerY + (distance * sin(rad).toFloat())
                 val size = 6f + (i % 3) * 2f
                 drawCircle(
                     color = color.copy(alpha = 0.7f + 0.3f * (i.toFloat() / max(count, 1))),
                     radius = size,
                     center = Offset(x, y)
                 )
-                // 外发光
                 drawCircle(
                     color = color.copy(alpha = 0.15f),
                     radius = size * 2f,
