@@ -6,10 +6,7 @@ import android.app.NotificationManager
 import android.os.Build
 import androidx.room.Room
 import com.geosurvey.android.data.database.AppDatabase
-import com.geosurvey.android.data.repository.AttitudeRepository
-import com.geosurvey.android.data.repository.CoordinateRepository
-import com.geosurvey.android.data.repository.PhotoRepository
-import com.geosurvey.android.data.repository.TrackRepository
+import com.geosurvey.android.data.repository.*
 
 class GeoSurveyApplication : Application() {
 
@@ -53,6 +50,12 @@ class GeoSurveyApplication : Application() {
     val coordinateRepository by lazy {
         CoordinateRepository(
             coordinateDao = database.coordinateDao()
+        )
+    }
+
+    val sampleRepository by lazy {
+        SampleRepository(
+            sampleDao = database.sampleDao()
         )
     }
 
