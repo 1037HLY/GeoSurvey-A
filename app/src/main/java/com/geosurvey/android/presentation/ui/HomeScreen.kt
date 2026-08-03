@@ -5,6 +5,7 @@ import android.content.pm.PackageManager
 import androidx.activity.compose.rememberLauncherForActivityResult
 import androidx.activity.result.contract.ActivityResultContracts
 import androidx.compose.animation.core.*
+import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.*
 import androidx.compose.material3.*
 import androidx.compose.runtime.*
@@ -39,6 +40,9 @@ fun HomeScreen() {
 
     val state by locationViewModel.state.collectAsState()
     val isRecording by trackViewModel.isRecording.collectAsState()
+
+    // ⭐ 卫星详情对话框状态
+    var showSatelliteDetail by remember { mutableStateOf(false) }
 
     // 脉冲动画
     val infiniteTransition = rememberInfiniteTransition()
@@ -129,9 +133,15 @@ fun HomeScreen() {
 
         Spacer(modifier = Modifier.height(12.dp))
 
-        // 卫星状态卡片
+        // ⭐ 卫星状态卡片 - 添加点击事件展开详情
         GlassCard(
-            modifier = Modifier.fillMaxWidth()
+            modifier = Modifier
+                .fillMaxWidth()
+                .clickable { 
+                    if (state.satelliteCount > 0) {
+                        showSatelliteDetail = true 
+                    }
+                }
         ) {
             SatelliteStatusContent(state)
         }
@@ -202,6 +212,24 @@ fun HomeScreen() {
             color = Color(0xFF94A3B8)
         )
     }
+
+    // ⭐ 卫星详情对话框
+    if (showSatelliteDetail) {
+        AlertDialog(
+            onDismissRequest = { showSatelliteDetail = false },
+            modifier = Modifier
+                .fillMaxWidth()
+                .heightIn(max = 700.dp),
+            containerColor = Color(0xFFF8FAFC),
+            shape = RoundedCornerShape(24.dp),
+            content = {
+                SatelliteDetailScreen(
+                    state = state,
+                    onDismiss = { showSatelliteDetail = false }
+                )
+            }
+        )
+    }
 }
 
 @Composable
@@ -216,7 +244,6 @@ fun LocationInfoContent(state: LocationState) {
             fontWeight = FontWeight.SemiBold,
             color = PrimaryBlue
         )
-        // ⭐ 优化：显示定位状态（搜索中/定位中/已停止）
         Text(
             text = when {
                 state.isSearching -> "🔍 搜索中..."
@@ -234,7 +261,6 @@ fun LocationInfoContent(state: LocationState) {
 
     Spacer(modifier = Modifier.height(8.dp))
 
-    // ⭐ 显示搜索时间
     if (state.isSearching) {
         Text(
             text = "⏳ 搜索GPS信号... (${state.searchTime / 1000}s)",
@@ -243,7 +269,6 @@ fun LocationInfoContent(state: LocationState) {
         )
     }
 
-    // ⭐ 显示错误信息
     if (state.errorMessage.isNotEmpty()) {
         Text(
             text = "⚠️ ${state.errorMessage}",
@@ -313,10 +338,9 @@ fun SatelliteStatusContent(state: LocationState) {
             color = AccentPurple
         )
         Text(
-            text = state.qualityText,
-            fontSize = 14.sp,
-            fontWeight = FontWeight.SemiBold,
-            color = state.qualityColor
+            text = if (state.satelliteCount > 0) "点击查看详情 →" else state.qualityText,
+            fontSize = 12.sp,
+            color = if (state.satelliteCount > 0) PrimaryBlue else Color(0xFF94A3B8)
         )
     }
 
