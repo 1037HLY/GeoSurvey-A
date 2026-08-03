@@ -216,14 +216,41 @@ fun LocationInfoContent(state: LocationState) {
             fontWeight = FontWeight.SemiBold,
             color = PrimaryBlue
         )
+        // ⭐ 优化：显示定位状态（搜索中/定位中/已停止）
         Text(
-            text = if (state.isActive) "● 定位中" else "○ 已停止",
+            text = when {
+                state.isSearching -> "🔍 搜索中..."
+                state.location != null -> "● 定位中"
+                else -> "○ 已停止"
+            },
             fontSize = 14.sp,
-            color = if (state.isActive) SecondaryGreen else Color(0xFF94A3B8)
+            color = when {
+                state.isSearching -> AccentOrange
+                state.location != null -> SecondaryGreen
+                else -> Color(0xFF94A3B8)
+            }
         )
     }
 
     Spacer(modifier = Modifier.height(8.dp))
+
+    // ⭐ 显示搜索时间
+    if (state.isSearching) {
+        Text(
+            text = "⏳ 搜索GPS信号... (${state.searchTime / 1000}s)",
+            fontSize = 12.sp,
+            color = AccentOrange
+        )
+    }
+
+    // ⭐ 显示错误信息
+    if (state.errorMessage.isNotEmpty()) {
+        Text(
+            text = "⚠️ ${state.errorMessage}",
+            fontSize = 12.sp,
+            color = ErrorRed
+        )
+    }
 
     val location = state.location
     if (location != null) {
@@ -258,9 +285,17 @@ fun LocationInfoContent(state: LocationState) {
         }
     } else {
         Text(
-            text = if (state.isActive) "🔍 搜索GPS信号中..." else "等待定位",
+            text = when {
+                state.isActive && state.isSearching -> "🔍 正在搜索GPS信号..."
+                state.isActive -> "等待定位..."
+                else -> "点击「开始定位」获取位置"
+            },
             fontSize = 14.sp,
-            color = Color(0xFF94A3B8)
+            color = when {
+                state.isSearching -> AccentOrange
+                state.isActive -> Color(0xFF94A3B8)
+                else -> Color(0xFF94A3B8)
+            }
         )
     }
 }
