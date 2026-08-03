@@ -360,7 +360,7 @@ fun CameraScreen() {
                                         try {
                                             val locationInfo = geocodingHelper.getLocationName(loc.latitude, loc.longitude)
                                             val fullAddress = locationInfo.fullName
-                                            if (fullAddress.contains("失败") || fullAddress.contains("无网络") || fullAddress.isEmpty()) {
+                                            if (fullAddress.isEmpty() || fullAddress.contains("失败") || fullAddress.contains("无网络")) {
                                                 String.format("%.5f, %.5f", loc.latitude, loc.longitude)
                                             } else {
                                                 fullAddress
