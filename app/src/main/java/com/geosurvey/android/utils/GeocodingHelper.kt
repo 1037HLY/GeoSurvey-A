@@ -3,19 +3,14 @@ package com.geosurvey.android.utils
 import android.content.Context
 import android.location.Address
 import android.location.Geocoder
+import android.net.ConnectivityManager
+import android.net.NetworkCapabilities
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.withContext
 import java.util.*
 
-/**
- * 逆地理编码工具
- * 根据经纬度获取位置名称（省市县乡镇）
- */
 class GeocodingHelper(private val context: Context) {
 
-    /**
-     * 位置信息数据类
-     */
     data class LocationInfo(
         val province: String = "",
         val city: String = "",
@@ -26,12 +21,33 @@ class GeocodingHelper(private val context: Context) {
     )
 
     /**
-     * 根据经纬度获取位置名称（省市县乡镇）
+     * 检查网络是否可用
      */
+    private fun isNetworkAvailable(): Boolean {
+        try {
+            val connectivityManager = context.getSystemService(Context.CONNECTIVITY_SERVICE) as ConnectivityManager
+            if (android.os.Build.VERSION.SDK_INT >= android.os.Build.VERSION_CODES.M) {
+                val network = connectivityManager.activeNetwork ?: return false
+                val capabilities = connectivityManager.getNetworkCapabilities(network) ?: return false
+                return capabilities.hasCapability(NetworkCapabilities.NET_CAPABILITY_INTERNET)
+            } else {
+                @Suppress("DEPRECATION")
+                val networkInfo = connectivityManager.activeNetworkInfo
+                return networkInfo != null && networkInfo.isConnected
+            }
+        } catch (e: Exception) {
+            return false
+        }
+    }
+
     suspend fun getLocationName(lat: Double, lon: Double): LocationInfo {
         return withContext(Dispatchers.IO) {
             try {
-                val geocoder = Geocoder(context, Locale.getDefault())
+                if (!isNetworkAvailable()) {
+                    return@withContext LocationInfo(fullName = "无网络连接")
+                }
+
+                val geocoder = Geocoder(context, Locale.CHINA)
                 val addresses: List<Address>? = geocoder.getFromLocation(lat, lon, 1)
 
                 if (addresses != null && addresses.isNotEmpty()) {
@@ -60,17 +76,14 @@ class GeocodingHelper(private val context: Context) {
                         fullName = fullName
                     )
                 } else {
-                    LocationInfo(fullName = "未知位置")
+                    LocationInfo(fullName = "无法获取位置名称")
                 }
             } catch (e: Exception) {
-                LocationInfo(fullName = "获取位置失败")
+                LocationInfo(fullName = "获取位置失败: ${e.message}")
             }
         }
     }
 
-    /**
-     * 获取简洁位置名称（省市县）
-     */
     suspend fun getSimpleLocationName(lat: Double, lon: Double): String {
         val info = getLocationName(lat, lon)
         return info.fullName
