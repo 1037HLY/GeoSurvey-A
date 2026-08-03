@@ -45,7 +45,6 @@ fun HomeScreen() {
 
     var showSatelliteDetail by remember { mutableStateOf(false) }
 
-    // 传感器历史数据 - 使用 mutableStateListOf 存储 Float
     val altitudeHistory = remember { mutableStateListOf<Float>() }
     val speedHistory = remember { mutableStateListOf<Float>() }
     val snrHistory = remember { mutableStateListOf<Float>() }
@@ -60,20 +59,17 @@ fun HomeScreen() {
         )
     )
 
-    // 监听位置更新，更新历史数据
     LaunchedEffect(state.location) {
         state.location?.let { location ->
-            // ⭐ 第72行：明确转换为 Float 类型
+            // ⭐ 第68行：显式转换为 Float
             val alt: Float = location.altitude?.toFloat() ?: 0f
             val speed: Float = location.speed?.let { it * 3.6 } ?: 0f
-            val snr: Float = state.averageSnr
+            val snr: Float = state.averageSnr.toFloat()
             
-            // 添加数据
             altitudeHistory.add(alt)
             speedHistory.add(speed)
             snrHistory.add(snr)
             
-            // 保持最多50个数据点
             if (altitudeHistory.size > 50) {
                 altitudeHistory.removeAt(0)
                 speedHistory.removeAt(0)
@@ -272,7 +268,6 @@ fun HomeScreen() {
         )
     }
 
-    // 全屏卫星详情对话框
     if (showSatelliteDetail) {
         Dialog(
             onDismissRequest = { showSatelliteDetail = false }
