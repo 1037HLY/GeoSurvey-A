@@ -59,7 +59,7 @@ fun CameraScreen() {
 
     var imageCapture by remember { mutableStateOf<ImageCapture?>(null) }
 
-    // ⭐ 水印自定义开关
+    // 水印自定义开关
     var showCoordinates by remember { mutableStateOf(true) }
     var showTime by remember { mutableStateOf(true) }
     var showLocation by remember { mutableStateOf(true) }
@@ -282,7 +282,7 @@ fun CameraScreen() {
                     }
                 }
 
-                // ⭐ 水印自定义开关
+                // 水印自定义开关
                 Text(
                     text = "⚙️ 水印选项",
                     fontSize = 13.sp,
@@ -355,10 +355,18 @@ fun CameraScreen() {
                                     val geocodingHelper = GeocodingHelper(context)
                                     val loc = location
 
+                                    // ⭐ 修复：位置名称获取失败时显示经纬度
                                     val locationName = if (loc != null && showLocation) {
-                                        runCatching {
-                                            geocodingHelper.getSimpleLocationName(loc.latitude, loc.longitude)
-                                        }.getOrNull() ?: ""
+                                        try {
+                                            val name = geocodingHelper.getSimpleLocationName(loc.latitude, loc.longitude)
+                                            if (name.contains("失败") || name.contains("无网络") || name.isEmpty() || name.contains("Timeout")) {
+                                                String.format("%.5f, %.5f", loc.latitude, loc.longitude)
+                                            } else {
+                                                name
+                                            }
+                                        } catch (e: Exception) {
+                                            String.format("%.5f, %.5f", loc.latitude, loc.longitude)
+                                        }
                                     } else {
                                         ""
                                     }
