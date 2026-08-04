@@ -3,6 +3,7 @@ package com.geosurvey.android.presentation.ui
 import android.content.Context
 import android.content.Intent
 import android.widget.Toast
+import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
@@ -88,7 +89,6 @@ fun TrackScreen(
             .fillMaxSize()
             .padding(16.dp)
     ) {
-        // 标题行
         Row(
             modifier = Modifier.fillMaxWidth(),
             horizontalArrangement = Arrangement.SpaceBetween,
@@ -120,7 +120,6 @@ fun TrackScreen(
 
         Spacer(modifier = Modifier.height(12.dp))
 
-        // 统计卡片
         GlassCard(
             modifier = Modifier.fillMaxWidth()
         ) {
@@ -150,7 +149,7 @@ fun TrackScreen(
 
         Spacer(modifier = Modifier.height(12.dp))
 
-        // ⭐ 轨迹预览卡片 - 使用地图投影
+        // 轨迹预览卡片
         if (trackPoints.isNotEmpty()) {
             GlassCard(
                 modifier = Modifier
@@ -194,7 +193,6 @@ fun TrackScreen(
 
                     Spacer(modifier = Modifier.height(4.dp))
 
-                    // ⭐ 使用地图投影组件
                     TrackMapProjection(
                         points = trackPoints,
                         height = 120
@@ -204,7 +202,6 @@ fun TrackScreen(
             Spacer(modifier = Modifier.height(12.dp))
         }
 
-        // 日期筛选
         if (availableDates.isNotEmpty()) {
             var expanded by remember { mutableStateOf(false) }
 
@@ -247,7 +244,6 @@ fun TrackScreen(
 
         Spacer(modifier = Modifier.height(8.dp))
 
-        // 操作按钮
         Row(
             modifier = Modifier.fillMaxWidth(),
             horizontalArrangement = Arrangement.spacedBy(8.dp)
@@ -290,7 +286,6 @@ fun TrackScreen(
 
         Spacer(modifier = Modifier.height(12.dp))
 
-        // 删除按钮
         if (pointCount > 0) {
             Row(
                 modifier = Modifier.fillMaxWidth(),
@@ -327,7 +322,6 @@ fun TrackScreen(
             Spacer(modifier = Modifier.height(12.dp))
         }
 
-        // 轨迹列表标题
         Row(
             modifier = Modifier.fillMaxWidth(),
             horizontalArrangement = Arrangement.SpaceBetween
@@ -370,7 +364,6 @@ fun TrackScreen(
         }
     }
 
-    // 导出对话框
     if (showExportDialog) {
         AlertDialog(
             onDismissRequest = { showExportDialog = false },
@@ -406,7 +399,6 @@ fun TrackScreen(
         )
     }
 
-    // 全屏轨迹详情对话框
     if (showFullTrackDetail) {
         Dialog(
             onDismissRequest = { showFullTrackDetail = false }
