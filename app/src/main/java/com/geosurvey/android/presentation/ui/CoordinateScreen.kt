@@ -7,9 +7,7 @@ import android.os.Looper
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
-import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.shape.RoundedCornerShape
-import androidx.compose.foundation.verticalScroll
 import androidx.compose.material3.*
 import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
@@ -39,11 +37,6 @@ import kotlinx.coroutines.launch
 import java.text.SimpleDateFormat
 import java.util.*
 
-enum class ConvertDirection {
-    LATLON_TO_GAUSS,
-    GAUSS_TO_LATLON
-}
-
 @Composable
 fun CoordinateScreen() {
     val context = LocalContext.current
@@ -63,6 +56,10 @@ fun CoordinateScreen() {
     var tempCentralMeridian by remember { mutableStateOf("") }
 
     // 转换方向选择
+    enum class ConvertDirection {
+        LATLON_TO_GAUSS,
+        GAUSS_TO_LATLON
+    }
     var convertDirection by remember { mutableStateOf(ConvertDirection.LATLON_TO_GAUSS) }
 
     // 高斯输入
@@ -159,11 +156,9 @@ fun CoordinateScreen() {
         }
     }
 
-    // ⭐ 使用 Column + verticalScroll 替代 LazyColumn，确保所有内容可见
     Column(
         modifier = Modifier
             .fillMaxSize()
-            .verticalScroll(rememberScrollState())
             .padding(16.dp),
         verticalArrangement = Arrangement.Top
     ) {
@@ -176,7 +171,7 @@ fun CoordinateScreen() {
 
         Spacer(modifier = Modifier.height(12.dp))
 
-        // ========== 当前坐标卡片 ==========
+        // 当前坐标
         GlassCard(
             modifier = Modifier.fillMaxWidth()
         ) {
@@ -216,7 +211,7 @@ fun CoordinateScreen() {
                     )
                 }
 
-                // 投影参数设置（按钮方式）
+                // 自定义参数设置
                 Spacer(modifier = Modifier.height(12.dp))
 
                 Divider(
@@ -224,69 +219,99 @@ fun CoordinateScreen() {
                     modifier = Modifier.padding(vertical = 4.dp)
                 )
 
-                Row(
-                    modifier = Modifier.fillMaxWidth(),
-                    horizontalArrangement = Arrangement.SpaceBetween,
-                    verticalAlignment = Alignment.CenterVertically
-                ) {
-                    Text(
-                        text = "⚙️ 投影参数",
-                        fontSize = 14.sp,
-                        fontWeight = FontWeight.SemiBold,
-                        color = Color(0xFF0F172A)
-                    )
-                    Text(
-                        text = if (state.useCustomProjection) "🔧 自定义" else "⚡ 自动",
-                        fontSize = 12.sp,
-                        color = if (state.useCustomProjection) PrimaryBlue else Color(0xFF94A3B8)
-                    )
-                }
+                Text(
+                    text = "⚙️ 高斯投影参数",
+                    fontSize = 14.sp,
+                    fontWeight = FontWeight.SemiBold,
+                    color = Color(0xFF0F172A)
+                )
 
                 Spacer(modifier = Modifier.height(8.dp))
 
+                // 自动/自定义切换
                 Row(
                     modifier = Modifier.fillMaxWidth(),
-                    horizontalArrangement = Arrangement.spacedBy(8.dp)
+                    verticalAlignment = Alignment.CenterVertically
                 ) {
-                    Button(
-                        onClick = {
-                            tempZone = state.customZone
-                            tempCentralMeridian = state.customCentralMeridian
-                            showProjectionDialog = true
+                    Switch(
+                        checked = state.useCustomProjection,
+                        onCheckedChange = {
+                            viewModel.toggleUseCustomProjection()
                         },
-                        modifier = Modifier.weight(1f),
-                        colors = ButtonDefaults.buttonColors(
-                            containerColor = PrimaryBlue
-                        ),
-                        shape = RoundedCornerShape(8.dp)
+                        colors = SwitchDefaults.colors(
+                            checkedThumbColor = PrimaryBlue,
+                            checkedTrackColor = PrimaryBlue.copy(alpha = 0.5f),
+                            uncheckedThumbColor = Color(0xFF94A3B8),
+                            uncheckedTrackColor = Color(0xFFE2E8F0)
+                        )
+                    )
+                    Text(
+                        text = if (state.useCustomProjection) "🔧 自定义参数" else "⚡ 自动计算",
+                        fontSize = 14.sp,
+                        fontWeight = if (state.useCustomProjection) FontWeight.SemiBold else FontWeight.Normal,
+                        color = if (state.useCustomProjection) PrimaryBlue else Color(0xFF475569)
+                    )
+                }
+
+                // 自定义参数输入
+                if (state.useCustomProjection) {
+                    Spacer(modifier = Modifier.height(8.dp))
+
+                    Row(
+                        modifier = Modifier.fillMaxWidth(),
+                        horizontalArrangement = Arrangement.spacedBy(8.dp)
                     ) {
-                        Text("📐 设置参数")
+                        OutlinedTextField(
+                            value = state.customZone,
+                            onValueChange = { viewModel.updateCustomZone(it) },
+                            label = { Text("带号") },
+                            modifier = Modifier.weight(1f),
+                            shape = RoundedCornerShape(8.dp),
+                            singleLine = true,
+                            placeholder = { Text("例如: 18", fontSize = 12.sp) }
+                        )
+                        OutlinedTextField(
+                            value = state.customCentralMeridian,
+                            onValueChange = { viewModel.updateCustomCentralMeridian(it) },
+                            label = { Text("中央子午线 (°)") },
+                            modifier = Modifier.weight(1f),
+                            shape = RoundedCornerShape(8.dp),
+                            singleLine = true,
+                            placeholder = { Text("例如: 105", fontSize = 12.sp) }
+                        )
                     }
-                    if (state.useCustomProjection) {
+
+                    Row(
+                        modifier = Modifier.fillMaxWidth(),
+                        horizontalArrangement = Arrangement.spacedBy(8.dp)
+                    ) {
                         Button(
-                            onClick = {
-                                viewModel.toggleUseCustomProjection()
-                                toastMessage = "✅ 已切换为自动计算"
-                                showToast = true
-                            },
+                            onClick = { viewModel.calculateWithCustomParams() },
                             modifier = Modifier.weight(1f),
                             colors = ButtonDefaults.buttonColors(
-                                containerColor = AccentOrange
+                                containerColor = PrimaryBlue
                             ),
                             shape = RoundedCornerShape(8.dp)
                         ) {
-                            Text("重置自动")
+                            Text("🔄 应用")
+                        }
+                        Button(
+                            onClick = {
+                                viewModel.updateCustomZone("")
+                                viewModel.updateCustomCentralMeridian("")
+                                if (state.useCustomProjection) {
+                                    viewModel.toggleUseCustomProjection()
+                                }
+                            },
+                            modifier = Modifier.weight(1f),
+                            colors = ButtonDefaults.buttonColors(
+                                containerColor = Color(0xFF94A3B8)
+                            ),
+                            shape = RoundedCornerShape(8.dp)
+                        ) {
+                            Text("重置")
                         }
                     }
-                }
-
-                if (state.useCustomProjection) {
-                    Text(
-                        text = "当前: 带号=${state.customZone}, 中央子午线=${state.customCentralMeridian}°",
-                        fontSize = 11.sp,
-                        color = PrimaryBlue,
-                        modifier = Modifier.padding(top = 4.dp)
-                    )
                 }
             } else {
                 Text(
@@ -299,7 +324,7 @@ fun CoordinateScreen() {
 
         Spacer(modifier = Modifier.height(12.dp))
 
-        // ========== 手动输入转换 ==========
+        // 手动输入转换
         GlassCard(
             modifier = Modifier.fillMaxWidth()
         ) {
@@ -513,7 +538,7 @@ fun CoordinateScreen() {
 
         Spacer(modifier = Modifier.height(12.dp))
 
-        // ========== 记录信息 ==========
+        // 备注和保存
         GlassCard(
             modifier = Modifier.fillMaxWidth()
         ) {
@@ -525,6 +550,7 @@ fun CoordinateScreen() {
             )
             Spacer(modifier = Modifier.height(8.dp))
 
+            // 地点名称
             OutlinedTextField(
                 value = state.locationName,
                 onValueChange = { viewModel.updateLocationName(it) },
@@ -539,6 +565,7 @@ fun CoordinateScreen() {
 
             Spacer(modifier = Modifier.height(8.dp))
 
+            // 备注
             OutlinedTextField(
                 value = state.note,
                 onValueChange = { viewModel.updateNote(it) },
@@ -594,9 +621,9 @@ fun CoordinateScreen() {
             }
         }
 
-        Spacer(modifier = Modifier.height(16.dp))
+        Spacer(modifier = Modifier.height(12.dp))
 
-        // ========== 历史记录 ==========
+        // 历史记录
         Text(
             text = "📋 历史记录 (${state.recordCount})",
             fontSize = 16.sp,
@@ -608,9 +635,7 @@ fun CoordinateScreen() {
 
         if (state.records.isEmpty()) {
             Box(
-                modifier = Modifier
-                    .fillMaxWidth()
-                    .height(120.dp),
+                modifier = Modifier.fillMaxSize(),
                 contentAlignment = Alignment.Center
             ) {
                 Text(
@@ -621,9 +646,7 @@ fun CoordinateScreen() {
             }
         } else {
             LazyColumn(
-                modifier = Modifier
-                    .fillMaxWidth()
-                    .heightIn(max = 300.dp),
+                modifier = Modifier.fillMaxSize(),
                 verticalArrangement = Arrangement.spacedBy(4.dp)
             ) {
                 items(state.records) { record ->
@@ -631,12 +654,9 @@ fun CoordinateScreen() {
                 }
             }
         }
-
-        // ⭐ 底部留白，确保内容不被切掉
-        Spacer(modifier = Modifier.height(80.dp))
     }
 
-    // ========== 投影参数设置对话框 ==========
+    // 投影参数设置对话框
     if (showProjectionDialog) {
         AlertDialog(
             onDismissRequest = { showProjectionDialog = false },
@@ -755,8 +775,9 @@ fun CoordinateRecordItem(record: com.geosurvey.android.data.model.CoordinateReco
                     )
                 }
             }
+            // ⭐ 使用独立的函数名避免冲突
             Text(
-                text = formatDateTime(record.timestamp),
+                text = formatCoordinateTime(record.timestamp),
                 fontSize = 11.sp,
                 color = Color(0xFF94A3B8)
             )
@@ -764,7 +785,8 @@ fun CoordinateRecordItem(record: com.geosurvey.android.data.model.CoordinateReco
     }
 }
 
-fun formatDateTime(timestamp: Long): String {
+// ⭐ 重命名函数避免与SampleHistoryScreen冲突
+fun formatCoordinateTime(timestamp: Long): String {
     val sdf = SimpleDateFormat("MM-dd HH:mm", Locale.getDefault())
     return sdf.format(Date(timestamp))
 }
