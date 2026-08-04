@@ -73,14 +73,14 @@ fun SampleHistoryScreen() {
 
         Spacer(modifier = Modifier.height(12.dp))
 
-        // ⭐ 使用 Row 的 weight 修饰符
+        // ⭐ 左右分栏 - 使用 Row
         Row(
             modifier = Modifier
                 .fillMaxSize()
                 .weight(1f),
             horizontalArrangement = Arrangement.spacedBy(8.dp)
         ) {
-            // 左侧普通样本面板 - 使用 Modifier.weight(1f)
+            // 左侧：普通样本
             NormalSamplePanel(
                 samples = state.normalSamples,
                 onSampleClick = { sample ->
@@ -108,7 +108,7 @@ fun SampleHistoryScreen() {
                 modifier = Modifier.weight(1f)
             )
 
-            // 右侧钻孔样本面板 - 使用 Modifier.weight(1f)
+            // 右侧：钻孔样本
             DrillSamplePanel(
                 samples = state.drillSamples,
                 onSampleClick = { sample ->
