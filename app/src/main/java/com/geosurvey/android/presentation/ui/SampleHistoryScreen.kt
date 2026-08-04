@@ -30,6 +30,12 @@ import kotlinx.coroutines.launch
 import java.text.SimpleDateFormat
 import java.util.*
 
+// 使用不同的函数名避免冲突
+private fun formatDateTime(timestamp: Long): String {
+    val sdf = SimpleDateFormat("MM-dd HH:mm", Locale.getDefault())
+    return sdf.format(Date(timestamp))
+}
+
 @Composable
 fun SampleHistoryScreen() {
     val context = LocalContext.current
@@ -38,13 +44,11 @@ fun SampleHistoryScreen() {
     val state by viewModel.state.collectAsState()
     val coroutineScope = rememberCoroutineScope()
 
-    // 普通样本详情
     var selectedNormalSample by remember { mutableStateOf<NormalSample?>(null) }
     var showNormalDetail by remember { mutableStateOf(false) }
     var isEditingNormal by remember { mutableStateOf(false) }
     var editNormalSample by remember { mutableStateOf<NormalSample?>(null) }
 
-    // 钻孔样本详情
     var selectedDrillSample by remember { mutableStateOf<DrillSample?>(null) }
     var showDrillDetail by remember { mutableStateOf(false) }
     var isEditingDrill by remember { mutableStateOf(false) }
@@ -55,7 +59,6 @@ fun SampleHistoryScreen() {
             .fillMaxSize()
             .padding(16.dp)
     ) {
-        // 标题
         Text(
             text = "📋 样本历史记录",
             fontSize = 24.sp,
@@ -71,14 +74,12 @@ fun SampleHistoryScreen() {
 
         Spacer(modifier = Modifier.height(12.dp))
 
-        // 左右分栏
         Row(
             modifier = Modifier
                 .fillMaxSize()
                 .weight(1f),
             horizontalArrangement = Arrangement.spacedBy(8.dp)
         ) {
-            // ⭐ 左侧：普通样本
             NormalSamplePanel(
                 samples = state.normalSamples,
                 onSampleClick = { sample ->
@@ -105,7 +106,6 @@ fun SampleHistoryScreen() {
                 }
             )
 
-            // ⭐ 右侧：钻孔样本
             DrillSamplePanel(
                 samples = state.drillSamples,
                 onSampleClick = { sample ->
@@ -134,7 +134,6 @@ fun SampleHistoryScreen() {
         }
     }
 
-    // ⭐ 普通样本详情对话框
     if (showNormalDetail && selectedNormalSample != null) {
         Dialog(onDismissRequest = { showNormalDetail = false }) {
             Surface(
@@ -149,7 +148,6 @@ fun SampleHistoryScreen() {
                     NormalSampleEditDialog(
                         sample = editNormalSample!!,
                         onSave = {
-                            // TODO: 实现更新功能
                             Toast.makeText(context, "已更新", Toast.LENGTH_SHORT).show()
                             showNormalDetail = false
                             isEditingNormal = false
@@ -174,7 +172,6 @@ fun SampleHistoryScreen() {
         }
     }
 
-    // ⭐ 钻孔样本详情对话框
     if (showDrillDetail && selectedDrillSample != null) {
         Dialog(onDismissRequest = { showDrillDetail = false }) {
             Surface(
@@ -237,7 +234,6 @@ fun NormalSamplePanel(
                 .fillMaxSize()
                 .padding(12.dp)
         ) {
-            // 标题栏
             Row(
                 modifier = Modifier.fillMaxWidth(),
                 horizontalArrangement = Arrangement.SpaceBetween,
@@ -249,7 +245,6 @@ fun NormalSamplePanel(
                     fontWeight = FontWeight.SemiBold,
                     color = PrimaryBlue
                 )
-                // CSV导出按钮
                 if (samples.isNotEmpty()) {
                     IconButton(
                         onClick = onExportClick,
@@ -314,7 +309,6 @@ fun DrillSamplePanel(
                 .fillMaxSize()
                 .padding(12.dp)
         ) {
-            // 标题栏
             Row(
                 modifier = Modifier.fillMaxWidth(),
                 horizontalArrangement = Arrangement.SpaceBetween,
@@ -399,7 +393,7 @@ fun NormalSampleCard(
                     color = Color(0xFF0F172A)
                 )
                 Text(
-                    text = formatTime(sample.timestamp),
+                    text = formatDateTime(sample.timestamp),
                     fontSize = 10.sp,
                     color = Color(0xFF94A3B8)
                 )
@@ -455,7 +449,7 @@ fun DrillSampleCard(
                     color = Color(0xFF0F172A)
                 )
                 Text(
-                    text = formatTime(sample.timestamp),
+                    text = formatDateTime(sample.timestamp),
                     fontSize = 10.sp,
                     color = Color(0xFF94A3B8)
                 )
@@ -531,7 +525,7 @@ fun NormalSampleDetailDialog(
                     Text("海拔: ${String.format("%.1f", it)}m", fontSize = 14.sp)
                 }
                 Text("描述: ${sample.description}", fontSize = 14.sp)
-                Text("时间: ${formatTime(sample.timestamp)}", fontSize = 14.sp)
+                Text("时间: ${formatDateTime(sample.timestamp)}", fontSize = 14.sp)
             }
         }
     }
@@ -583,7 +577,7 @@ fun DrillSampleDetailDialog(
                 Text("重量: ${sample.weight}kg", fontSize = 14.sp)
                 Text("岩心直径: ${sample.coreDiameter}mm", fontSize = 14.sp)
                 Text("描述: ${sample.description}", fontSize = 14.sp)
-                Text("时间: ${formatTime(sample.timestamp)}", fontSize = 14.sp)
+                Text("时间: ${formatDateTime(sample.timestamp)}", fontSize = 14.sp)
             }
         }
     }
@@ -711,9 +705,4 @@ fun DrillSampleEditDialog(
                 shape = RoundedCornerShape(12.dp)) { Text("取消") }
         }
     }
-}
-
-fun formatTime(timestamp: Long): String {
-    val sdf = SimpleDateFormat("MM-dd HH:mm", Locale.getDefault())
-    return sdf.format(Date(timestamp))
 }
