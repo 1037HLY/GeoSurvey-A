@@ -37,6 +37,12 @@ import kotlinx.coroutines.launch
 import java.text.SimpleDateFormat
 import java.util.*
 
+// ⭐ 枚举移到文件顶部
+enum class ConvertDirection {
+    LATLON_TO_GAUSS,
+    GAUSS_TO_LATLON
+}
+
 @Composable
 fun CoordinateScreen() {
     val context = LocalContext.current
@@ -55,11 +61,7 @@ fun CoordinateScreen() {
     var tempZone by remember { mutableStateOf("") }
     var tempCentralMeridian by remember { mutableStateOf("") }
 
-    // 转换方向选择
-    enum class ConvertDirection {
-        LATLON_TO_GAUSS,
-        GAUSS_TO_LATLON
-    }
+    // ⭐ 转换方向选择 - 使用顶部定义的枚举
     var convertDirection by remember { mutableStateOf(ConvertDirection.LATLON_TO_GAUSS) }
 
     // 高斯输入
@@ -775,7 +777,6 @@ fun CoordinateRecordItem(record: com.geosurvey.android.data.model.CoordinateReco
                     )
                 }
             }
-            // ⭐ 使用独立的函数名避免冲突
             Text(
                 text = formatCoordinateTime(record.timestamp),
                 fontSize = 11.sp,
