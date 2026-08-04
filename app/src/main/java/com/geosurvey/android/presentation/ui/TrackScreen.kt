@@ -48,7 +48,6 @@ fun TrackScreen(
     val filteredPoints by viewModel.filteredPoints.collectAsState()
 
     var showExportDialog by remember { mutableStateOf(false) }
-    // ⭐ 全屏轨迹详情状态
     var showFullTrackDetail by remember { mutableStateOf(false) }
 
     val displayPoints = if (selectedDate != null) filteredPoints else trackPoints
@@ -151,13 +150,57 @@ fun TrackScreen(
 
         Spacer(modifier = Modifier.height(12.dp))
 
-        // ⭐ 轨迹预览卡片
+        // ⭐ 轨迹预览卡片 - 使用地图投影
         if (trackPoints.isNotEmpty()) {
-            TrackPreviewCard(
-                points = trackPoints,
-                onClick = { showFullTrackDetail = true },
-                isRecording = isRecording
-            )
+            GlassCard(
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .clickable { showFullTrackDetail = true }
+            ) {
+                Column(
+                    modifier = Modifier.fillMaxWidth()
+                ) {
+                    Row(
+                        modifier = Modifier.fillMaxWidth(),
+                        horizontalArrangement = Arrangement.SpaceBetween,
+                        verticalAlignment = Alignment.CenterVertically
+                    ) {
+                        Text(
+                            text = "🗺️ 轨迹预览",
+                            fontSize = 14.sp,
+                            fontWeight = FontWeight.SemiBold,
+                            color = Color(0xFF0F172A)
+                        )
+                        Row(verticalAlignment = Alignment.CenterVertically) {
+                            Text(
+                                text = if (isRecording) "● 记录中" else "○ 已停止",
+                                fontSize = 11.sp,
+                                color = if (isRecording) SecondaryGreen else Color(0xFF94A3B8)
+                            )
+                            Spacer(modifier = Modifier.width(8.dp))
+                            Text(
+                                text = "${trackPoints.size}点",
+                                fontSize = 11.sp,
+                                color = Color(0xFF475569)
+                            )
+                            Spacer(modifier = Modifier.width(4.dp))
+                            Text(
+                                text = "点击放大 →",
+                                fontSize = 10.sp,
+                                color = PrimaryBlue
+                            )
+                        }
+                    }
+
+                    Spacer(modifier = Modifier.height(4.dp))
+
+                    // ⭐ 使用地图投影组件
+                    TrackMapProjection(
+                        points = trackPoints,
+                        height = 120
+                    )
+                }
+            }
             Spacer(modifier = Modifier.height(12.dp))
         }
 
@@ -363,7 +406,7 @@ fun TrackScreen(
         )
     }
 
-    // ⭐ 全屏轨迹详情对话框
+    // 全屏轨迹详情对话框
     if (showFullTrackDetail) {
         Dialog(
             onDismissRequest = { showFullTrackDetail = false }
