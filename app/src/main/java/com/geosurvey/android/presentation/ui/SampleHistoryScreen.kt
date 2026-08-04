@@ -73,14 +73,15 @@ fun SampleHistoryScreen() {
 
         Spacer(modifier = Modifier.height(12.dp))
 
+        // ⭐ 使用 Row 的 weight 修饰符
         Row(
             modifier = Modifier
                 .fillMaxSize()
                 .weight(1f),
             horizontalArrangement = Arrangement.spacedBy(8.dp)
         ) {
-            // ⭐ 使用 Modifier.weight(1f) 正确语法
-            NormalSamplePanel2(
+            // 左侧普通样本面板 - 使用 Modifier.weight(1f)
+            NormalSamplePanel(
                 samples = state.normalSamples,
                 onSampleClick = { sample ->
                     selectedNormalSample = sample
@@ -103,10 +104,12 @@ fun SampleHistoryScreen() {
                             Toast.makeText(context, "导出失败", Toast.LENGTH_SHORT).show()
                         }
                     }
-                }
+                },
+                modifier = Modifier.weight(1f)
             )
 
-            DrillSamplePanel2(
+            // 右侧钻孔样本面板 - 使用 Modifier.weight(1f)
+            DrillSamplePanel(
                 samples = state.drillSamples,
                 onSampleClick = { sample ->
                     selectedDrillSample = sample
@@ -129,7 +132,8 @@ fun SampleHistoryScreen() {
                             Toast.makeText(context, "导出失败", Toast.LENGTH_SHORT).show()
                         }
                     }
-                }
+                },
+                modifier = Modifier.weight(1f)
             )
         }
     }
@@ -146,7 +150,7 @@ fun SampleHistoryScreen() {
                 color = Color(0xFFF8FAFC)
             ) {
                 if (isEditingNormal && editNormalSample != null) {
-                    NormalSampleEditDialog2(
+                    NormalSampleEditDialog(
                         sample = editNormalSample!!,
                         onSave = {
                             Toast.makeText(context, "已更新", Toast.LENGTH_SHORT).show()
@@ -160,7 +164,7 @@ fun SampleHistoryScreen() {
                         }
                     )
                 } else {
-                    NormalSampleDetailDialog2(
+                    NormalSampleDetailDialog(
                         sample = selectedNormalSample!!,
                         onEdit = {
                             isEditingNormal = true
@@ -185,7 +189,7 @@ fun SampleHistoryScreen() {
                 color = Color(0xFFF8FAFC)
             ) {
                 if (isEditingDrill && editDrillSample != null) {
-                    DrillSampleEditDialog2(
+                    DrillSampleEditDialog(
                         sample = editDrillSample!!,
                         onSave = {
                             Toast.makeText(context, "已更新", Toast.LENGTH_SHORT).show()
@@ -199,7 +203,7 @@ fun SampleHistoryScreen() {
                         }
                     )
                 } else {
-                    DrillSampleDetailDialog2(
+                    DrillSampleDetailDialog(
                         sample = selectedDrillSample!!,
                         onEdit = {
                             isEditingDrill = true
@@ -215,15 +219,15 @@ fun SampleHistoryScreen() {
 
 // ========== 普通样本面板 ==========
 @Composable
-fun NormalSamplePanel2(
+fun NormalSamplePanel(
     samples: List<NormalSample>,
     onSampleClick: (NormalSample) -> Unit,
     onSampleLongClick: (NormalSample) -> Unit,
-    onExportClick: () -> Unit
+    onExportClick: () -> Unit,
+    modifier: Modifier = Modifier
 ) {
     Card(
-        modifier = Modifier
-            .weight(1f)
+        modifier = modifier
             .fillMaxHeight(),
         colors = CardDefaults.cardColors(
             containerColor = Color.White.copy(alpha = 0.7f)
@@ -276,7 +280,7 @@ fun NormalSamplePanel2(
                     verticalArrangement = Arrangement.spacedBy(4.dp)
                 ) {
                     items(samples) { sample ->
-                        NormalSampleCard2(
+                        NormalSampleCard(
                             sample = sample,
                             onClick = { onSampleClick(sample) },
                             onLongClick = { onSampleLongClick(sample) }
@@ -290,15 +294,15 @@ fun NormalSamplePanel2(
 
 // ========== 钻孔样本面板 ==========
 @Composable
-fun DrillSamplePanel2(
+fun DrillSamplePanel(
     samples: List<DrillSample>,
     onSampleClick: (DrillSample) -> Unit,
     onSampleLongClick: (DrillSample) -> Unit,
-    onExportClick: () -> Unit
+    onExportClick: () -> Unit,
+    modifier: Modifier = Modifier
 ) {
     Card(
-        modifier = Modifier
-            .weight(1f)
+        modifier = modifier
             .fillMaxHeight(),
         colors = CardDefaults.cardColors(
             containerColor = Color.White.copy(alpha = 0.7f)
@@ -351,7 +355,7 @@ fun DrillSamplePanel2(
                     verticalArrangement = Arrangement.spacedBy(4.dp)
                 ) {
                     items(samples) { sample ->
-                        DrillSampleCard2(
+                        DrillSampleCard(
                             sample = sample,
                             onClick = { onSampleClick(sample) },
                             onLongClick = { onSampleLongClick(sample) }
@@ -365,7 +369,7 @@ fun DrillSamplePanel2(
 
 // ========== 普通样本卡片 ==========
 @Composable
-fun NormalSampleCard2(
+fun NormalSampleCard(
     sample: NormalSample,
     onClick: () -> Unit,
     onLongClick: () -> Unit
@@ -421,7 +425,7 @@ fun NormalSampleCard2(
 
 // ========== 钻孔样本卡片 ==========
 @Composable
-fun DrillSampleCard2(
+fun DrillSampleCard(
     sample: DrillSample,
     onClick: () -> Unit,
     onLongClick: () -> Unit
@@ -482,7 +486,7 @@ fun DrillSampleCard2(
 
 // ========== 普通样本详情对话框 ==========
 @Composable
-fun NormalSampleDetailDialog2(
+fun NormalSampleDetailDialog(
     sample: NormalSample,
     onEdit: () -> Unit,
     onClose: () -> Unit
@@ -535,7 +539,7 @@ fun NormalSampleDetailDialog2(
 
 // ========== 钻孔样本详情对话框 ==========
 @Composable
-fun DrillSampleDetailDialog2(
+fun DrillSampleDetailDialog(
     sample: DrillSample,
     onEdit: () -> Unit,
     onClose: () -> Unit
@@ -587,7 +591,7 @@ fun DrillSampleDetailDialog2(
 
 // ========== 普通样本编辑对话框 ==========
 @Composable
-fun NormalSampleEditDialog2(
+fun NormalSampleEditDialog(
     sample: NormalSample,
     onSave: () -> Unit,
     onCancel: () -> Unit
@@ -636,7 +640,7 @@ fun NormalSampleEditDialog2(
 
 // ========== 钻孔样本编辑对话框 ==========
 @Composable
-fun DrillSampleEditDialog2(
+fun DrillSampleEditDialog(
     sample: DrillSample,
     onSave: () -> Unit,
     onCancel: () -> Unit
