@@ -43,11 +43,13 @@ fun SampleHistoryScreen() {
     val state by viewModel.state.collectAsState()
     val coroutineScope = rememberCoroutineScope()
 
+    // 普通样本状态
     var selectedNormalSample by remember { mutableStateOf<NormalSample?>(null) }
     var showNormalDetail by remember { mutableStateOf(false) }
     var isEditingNormal by remember { mutableStateOf(false) }
     var editNormalSample by remember { mutableStateOf<NormalSample?>(null) }
 
+    // 钻孔样本状态
     var selectedDrillSample by remember { mutableStateOf<DrillSample?>(null) }
     var showDrillDetail by remember { mutableStateOf(false) }
     var isEditingDrill by remember { mutableStateOf(false) }
@@ -58,6 +60,7 @@ fun SampleHistoryScreen() {
             .fillMaxSize()
             .padding(16.dp)
     ) {
+        // 标题
         Text(
             text = "📋 样本历史记录",
             fontSize = 24.sp,
@@ -73,7 +76,7 @@ fun SampleHistoryScreen() {
 
         Spacer(modifier = Modifier.height(12.dp))
 
-        // ⭐ 左右分栏 - 使用 Row
+        // ⭐ 左右分栏
         Row(
             modifier = Modifier
                 .fillMaxSize()
@@ -105,6 +108,12 @@ fun SampleHistoryScreen() {
                         }
                     }
                 },
+                onDeleteClick = {
+                    coroutineScope.launch {
+                        viewModel.deleteAllNormalSamples()
+                        Toast.makeText(context, "已删除所有普通样本", Toast.LENGTH_SHORT).show()
+                    }
+                },
                 modifier = Modifier.weight(1f)
             )
 
@@ -133,12 +142,18 @@ fun SampleHistoryScreen() {
                         }
                     }
                 },
+                onDeleteClick = {
+                    coroutineScope.launch {
+                        viewModel.deleteAllDrillSamples()
+                        Toast.makeText(context, "已删除所有钻孔样本", Toast.LENGTH_SHORT).show()
+                    }
+                },
                 modifier = Modifier.weight(1f)
             )
         }
     }
 
-    // 普通样本详情对话框
+    // ⭐ 普通样本详情对话框
     if (showNormalDetail && selectedNormalSample != null) {
         Dialog(onDismissRequest = { showNormalDetail = false }) {
             Surface(
@@ -153,10 +168,27 @@ fun SampleHistoryScreen() {
                     NormalSampleEditDialog(
                         sample = editNormalSample!!,
                         onSave = {
-                            Toast.makeText(context, "已更新", Toast.LENGTH_SHORT).show()
-                            showNormalDetail = false
-                            isEditingNormal = false
-                            viewModel.loadData()
+                            // ⭐ 保存编辑后的数据
+                            coroutineScope.launch {
+                                try {
+                                    // 更新样本数据
+                                    val updatedSample = editNormalSample!!.copy(
+                                        sampleType = editNormalSample!!.sampleType,
+                                        sampleNumber = editNormalSample!!.sampleNumber,
+                                        sampleName = editNormalSample!!.sampleName,
+                                        weight = editNormalSample!!.weight,
+                                        description = editNormalSample!!.description
+                                    )
+                                    // TODO: 实现更新功能 - 需要Repository添加update方法
+                                    // viewModel.updateNormalSample(updatedSample)
+                                    Toast.makeText(context, "✅ 已更新（功能开发中）", Toast.LENGTH_SHORT).show()
+                                    showNormalDetail = false
+                                    isEditingNormal = false
+                                    viewModel.loadData()
+                                } catch (e: Exception) {
+                                    Toast.makeText(context, "❌ 更新失败", Toast.LENGTH_SHORT).show()
+                                }
+                            }
                         },
                         onCancel = {
                             showNormalDetail = false
@@ -177,7 +209,7 @@ fun SampleHistoryScreen() {
         }
     }
 
-    // 钻孔样本详情对话框
+    // ⭐ 钻孔样本详情对话框
     if (showDrillDetail && selectedDrillSample != null) {
         Dialog(onDismissRequest = { showDrillDetail = false }) {
             Surface(
@@ -192,10 +224,16 @@ fun SampleHistoryScreen() {
                     DrillSampleEditDialog(
                         sample = editDrillSample!!,
                         onSave = {
-                            Toast.makeText(context, "已更新", Toast.LENGTH_SHORT).show()
-                            showDrillDetail = false
-                            isEditingDrill = false
-                            viewModel.loadData()
+                            coroutineScope.launch {
+                                try {
+                                    Toast.makeText(context, "✅ 已更新（功能开发中）", Toast.LENGTH_SHORT).show()
+                                    showDrillDetail = false
+                                    isEditingDrill = false
+                                    viewModel.loadData()
+                                } catch (e: Exception) {
+                                    Toast.makeText(context, "❌ 更新失败", Toast.LENGTH_SHORT).show()
+                                }
+                            }
                         },
                         onCancel = {
                             showDrillDetail = false
@@ -224,11 +262,11 @@ fun NormalSamplePanel(
     onSampleClick: (NormalSample) -> Unit,
     onSampleLongClick: (NormalSample) -> Unit,
     onExportClick: () -> Unit,
+    onDeleteClick: () -> Unit,
     modifier: Modifier = Modifier
 ) {
     Card(
-        modifier = modifier
-            .fillMaxHeight(),
+        modifier = modifier,
         colors = CardDefaults.cardColors(
             containerColor = Color.White.copy(alpha = 0.7f)
         ),
@@ -240,6 +278,7 @@ fun NormalSamplePanel(
                 .fillMaxSize()
                 .padding(12.dp)
         ) {
+            // 标题栏
             Row(
                 modifier = Modifier.fillMaxWidth(),
                 horizontalArrangement = Arrangement.SpaceBetween,
@@ -261,8 +300,9 @@ fun NormalSamplePanel(
                 }
             }
 
-            Spacer(modifier = Modifier.height(8.dp))
+            Spacer(modifier = Modifier.height(4.dp))
 
+            // 列表
             if (samples.isEmpty()) {
                 Box(
                     modifier = Modifier.fillMaxSize(),
@@ -276,7 +316,9 @@ fun NormalSamplePanel(
                 }
             } else {
                 LazyColumn(
-                    modifier = Modifier.fillMaxSize(),
+                    modifier = Modifier
+                        .fillMaxSize()
+                        .weight(1f),
                     verticalArrangement = Arrangement.spacedBy(4.dp)
                 ) {
                     items(samples) { sample ->
@@ -286,6 +328,21 @@ fun NormalSamplePanel(
                             onLongClick = { onSampleLongClick(sample) }
                         )
                     }
+                }
+            }
+
+            // 删除按钮
+            if (samples.isNotEmpty()) {
+                Spacer(modifier = Modifier.height(4.dp))
+                Button(
+                    onClick = onDeleteClick,
+                    modifier = Modifier.fillMaxWidth(),
+                    colors = ButtonDefaults.buttonColors(
+                        containerColor = ErrorRed.copy(alpha = 0.8f)
+                    ),
+                    shape = RoundedCornerShape(8.dp)
+                ) {
+                    Text("🗑️ 删除全部")
                 }
             }
         }
@@ -299,11 +356,11 @@ fun DrillSamplePanel(
     onSampleClick: (DrillSample) -> Unit,
     onSampleLongClick: (DrillSample) -> Unit,
     onExportClick: () -> Unit,
+    onDeleteClick: () -> Unit,
     modifier: Modifier = Modifier
 ) {
     Card(
-        modifier = modifier
-            .fillMaxHeight(),
+        modifier = modifier,
         colors = CardDefaults.cardColors(
             containerColor = Color.White.copy(alpha = 0.7f)
         ),
@@ -315,6 +372,7 @@ fun DrillSamplePanel(
                 .fillMaxSize()
                 .padding(12.dp)
         ) {
+            // 标题栏
             Row(
                 modifier = Modifier.fillMaxWidth(),
                 horizontalArrangement = Arrangement.SpaceBetween,
@@ -336,8 +394,9 @@ fun DrillSamplePanel(
                 }
             }
 
-            Spacer(modifier = Modifier.height(8.dp))
+            Spacer(modifier = Modifier.height(4.dp))
 
+            // 列表
             if (samples.isEmpty()) {
                 Box(
                     modifier = Modifier.fillMaxSize(),
@@ -351,7 +410,9 @@ fun DrillSamplePanel(
                 }
             } else {
                 LazyColumn(
-                    modifier = Modifier.fillMaxSize(),
+                    modifier = Modifier
+                        .fillMaxSize()
+                        .weight(1f),
                     verticalArrangement = Arrangement.spacedBy(4.dp)
                 ) {
                     items(samples) { sample ->
@@ -361,6 +422,21 @@ fun DrillSamplePanel(
                             onLongClick = { onSampleLongClick(sample) }
                         )
                     }
+                }
+            }
+
+            // 删除按钮
+            if (samples.isNotEmpty()) {
+                Spacer(modifier = Modifier.height(4.dp))
+                Button(
+                    onClick = onDeleteClick,
+                    modifier = Modifier.fillMaxWidth(),
+                    colors = ButtonDefaults.buttonColors(
+                        containerColor = ErrorRed.copy(alpha = 0.8f)
+                    ),
+                    shape = RoundedCornerShape(8.dp)
+                ) {
+                    Text("🗑️ 删除全部")
                 }
             }
         }
@@ -611,29 +687,73 @@ fun NormalSampleEditDialog(
         Text("✏️ 编辑普通样本", fontSize = 20.sp, fontWeight = FontWeight.Bold)
         Spacer(modifier = Modifier.height(12.dp))
         
-        OutlinedTextField(value = number, onValueChange = { number = it }, label = { Text("编号 *") },
-            modifier = Modifier.fillMaxWidth(), shape = RoundedCornerShape(8.dp), singleLine = true)
+        OutlinedTextField(
+            value = number,
+            onValueChange = { number = it },
+            label = { Text("编号 *") },
+            modifier = Modifier.fillMaxWidth(),
+            shape = RoundedCornerShape(8.dp),
+            singleLine = true
+        )
         Spacer(modifier = Modifier.height(8.dp))
-        OutlinedTextField(value = name, onValueChange = { name = it }, label = { Text("名称 *") },
-            modifier = Modifier.fillMaxWidth(), shape = RoundedCornerShape(8.dp), singleLine = true)
+        
+        OutlinedTextField(
+            value = name,
+            onValueChange = { name = it },
+            label = { Text("名称 *") },
+            modifier = Modifier.fillMaxWidth(),
+            shape = RoundedCornerShape(8.dp),
+            singleLine = true
+        )
         Spacer(modifier = Modifier.height(8.dp))
-        OutlinedTextField(value = type, onValueChange = { type = it }, label = { Text("类型") },
-            modifier = Modifier.fillMaxWidth(), shape = RoundedCornerShape(8.dp), singleLine = true)
+        
+        OutlinedTextField(
+            value = type,
+            onValueChange = { type = it },
+            label = { Text("类型") },
+            modifier = Modifier.fillMaxWidth(),
+            shape = RoundedCornerShape(8.dp),
+            singleLine = true
+        )
         Spacer(modifier = Modifier.height(8.dp))
-        OutlinedTextField(value = weight, onValueChange = { weight = it }, label = { Text("重量 (kg)") },
-            modifier = Modifier.fillMaxWidth(), shape = RoundedCornerShape(8.dp), singleLine = true)
+        
+        OutlinedTextField(
+            value = weight,
+            onValueChange = { weight = it },
+            label = { Text("重量 (kg)") },
+            modifier = Modifier.fillMaxWidth(),
+            shape = RoundedCornerShape(8.dp),
+            singleLine = true
+        )
         Spacer(modifier = Modifier.height(8.dp))
-        OutlinedTextField(value = desc, onValueChange = { desc = it }, label = { Text("描述") },
-            modifier = Modifier.fillMaxWidth(), shape = RoundedCornerShape(8.dp), maxLines = 3)
+        
+        OutlinedTextField(
+            value = desc,
+            onValueChange = { desc = it },
+            label = { Text("描述") },
+            modifier = Modifier.fillMaxWidth(),
+            shape = RoundedCornerShape(8.dp),
+            maxLines = 3
+        )
         Spacer(modifier = Modifier.height(16.dp))
         
         Row(modifier = Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.spacedBy(8.dp)) {
-            Button(onClick = onSave, modifier = Modifier.weight(1f),
+            Button(
+                onClick = onSave,
+                modifier = Modifier.weight(1f),
                 colors = ButtonDefaults.buttonColors(containerColor = SecondaryGreen),
-                shape = RoundedCornerShape(12.dp)) { Text("💾 保存") }
-            Button(onClick = onCancel, modifier = Modifier.weight(1f),
+                shape = RoundedCornerShape(12.dp)
+            ) {
+                Text("💾 保存")
+            }
+            Button(
+                onClick = onCancel,
+                modifier = Modifier.weight(1f),
                 colors = ButtonDefaults.buttonColors(containerColor = Color(0xFF94A3B8)),
-                shape = RoundedCornerShape(12.dp)) { Text("取消") }
+                shape = RoundedCornerShape(12.dp)
+            ) {
+                Text("取消")
+            }
         }
     }
 }
@@ -665,50 +785,126 @@ fun DrillSampleEditDialog(
         Text("✏️ 编辑钻孔样本", fontSize = 20.sp, fontWeight = FontWeight.Bold)
         Spacer(modifier = Modifier.height(12.dp))
         
-        OutlinedTextField(value = number, onValueChange = { number = it }, label = { Text("编号 *") },
-            modifier = Modifier.fillMaxWidth(), shape = RoundedCornerShape(8.dp), singleLine = true)
+        OutlinedTextField(
+            value = number,
+            onValueChange = { number = it },
+            label = { Text("编号 *") },
+            modifier = Modifier.fillMaxWidth(),
+            shape = RoundedCornerShape(8.dp),
+            singleLine = true
+        )
         Spacer(modifier = Modifier.height(8.dp))
-        OutlinedTextField(value = name, onValueChange = { name = it }, label = { Text("名称 *") },
-            modifier = Modifier.fillMaxWidth(), shape = RoundedCornerShape(8.dp), singleLine = true)
+        
+        OutlinedTextField(
+            value = name,
+            onValueChange = { name = it },
+            label = { Text("名称 *") },
+            modifier = Modifier.fillMaxWidth(),
+            shape = RoundedCornerShape(8.dp),
+            singleLine = true
+        )
         Spacer(modifier = Modifier.height(8.dp))
+        
         Row(modifier = Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.spacedBy(8.dp)) {
-            OutlinedTextField(value = fromDepth, onValueChange = { fromDepth = it }, label = { Text("井深(自)") },
-                modifier = Modifier.weight(1f), shape = RoundedCornerShape(8.dp), singleLine = true)
-            OutlinedTextField(value = toDepth, onValueChange = { toDepth = it }, label = { Text("井深(至)") },
-                modifier = Modifier.weight(1f), shape = RoundedCornerShape(8.dp), singleLine = true)
+            OutlinedTextField(
+                value = fromDepth,
+                onValueChange = { fromDepth = it },
+                label = { Text("井深(自)") },
+                modifier = Modifier.weight(1f),
+                shape = RoundedCornerShape(8.dp),
+                singleLine = true
+            )
+            OutlinedTextField(
+                value = toDepth,
+                onValueChange = { toDepth = it },
+                label = { Text("井深(至)") },
+                modifier = Modifier.weight(1f),
+                shape = RoundedCornerShape(8.dp),
+                singleLine = true
+            )
         }
         Spacer(modifier = Modifier.height(8.dp))
+        
         Row(modifier = Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.spacedBy(8.dp)) {
-            OutlinedTextField(value = sampleLength, onValueChange = { sampleLength = it }, label = { Text("样长(m)") },
-                modifier = Modifier.weight(1f), shape = RoundedCornerShape(8.dp), singleLine = true)
-            OutlinedTextField(value = coreLength, onValueChange = { coreLength = it }, label = { Text("岩心长(m)") },
-                modifier = Modifier.weight(1f), shape = RoundedCornerShape(8.dp), singleLine = true)
+            OutlinedTextField(
+                value = sampleLength,
+                onValueChange = { sampleLength = it },
+                label = { Text("样长(m)") },
+                modifier = Modifier.weight(1f),
+                shape = RoundedCornerShape(8.dp),
+                singleLine = true
+            )
+            OutlinedTextField(
+                value = coreLength,
+                onValueChange = { coreLength = it },
+                label = { Text("岩心长(m)") },
+                modifier = Modifier.weight(1f),
+                shape = RoundedCornerShape(8.dp),
+                singleLine = true
+            )
         }
         Spacer(modifier = Modifier.height(8.dp))
+        
         Row(modifier = Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.spacedBy(8.dp)) {
-            OutlinedTextField(value = recoveryRate, onValueChange = { recoveryRate = it }, label = { Text("采取率(%)") },
-                modifier = Modifier.weight(1f), shape = RoundedCornerShape(8.dp), singleLine = true)
-            OutlinedTextField(value = weight, onValueChange = { weight = it }, label = { Text("重量(kg)") },
-                modifier = Modifier.weight(1f), shape = RoundedCornerShape(8.dp), singleLine = true)
+            OutlinedTextField(
+                value = recoveryRate,
+                onValueChange = { recoveryRate = it },
+                label = { Text("采取率(%)") },
+                modifier = Modifier.weight(1f),
+                shape = RoundedCornerShape(8.dp),
+                singleLine = true
+            )
+            OutlinedTextField(
+                value = weight,
+                onValueChange = { weight = it },
+                label = { Text("重量(kg)") },
+                modifier = Modifier.weight(1f),
+                shape = RoundedCornerShape(8.dp),
+                singleLine = true
+            )
         }
         Spacer(modifier = Modifier.height(8.dp))
+        
         Row(modifier = Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.spacedBy(8.dp)) {
-            OutlinedTextField(value = coreDiameter, onValueChange = { coreDiameter = it }, label = { Text("岩心直径(mm)") },
-                modifier = Modifier.weight(1f), shape = RoundedCornerShape(8.dp), singleLine = true)
+            OutlinedTextField(
+                value = coreDiameter,
+                onValueChange = { coreDiameter = it },
+                label = { Text("岩心直径(mm)") },
+                modifier = Modifier.weight(1f),
+                shape = RoundedCornerShape(8.dp),
+                singleLine = true
+            )
             Spacer(modifier = Modifier.width(8.dp))
         }
         Spacer(modifier = Modifier.height(8.dp))
-        OutlinedTextField(value = desc, onValueChange = { desc = it }, label = { Text("描述") },
-            modifier = Modifier.fillMaxWidth(), shape = RoundedCornerShape(8.dp), maxLines = 3)
+        
+        OutlinedTextField(
+            value = desc,
+            onValueChange = { desc = it },
+            label = { Text("描述") },
+            modifier = Modifier.fillMaxWidth(),
+            shape = RoundedCornerShape(8.dp),
+            maxLines = 3
+        )
         Spacer(modifier = Modifier.height(16.dp))
         
         Row(modifier = Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.spacedBy(8.dp)) {
-            Button(onClick = onSave, modifier = Modifier.weight(1f),
+            Button(
+                onClick = onSave,
+                modifier = Modifier.weight(1f),
                 colors = ButtonDefaults.buttonColors(containerColor = SecondaryGreen),
-                shape = RoundedCornerShape(12.dp)) { Text("💾 保存") }
-            Button(onClick = onCancel, modifier = Modifier.weight(1f),
+                shape = RoundedCornerShape(12.dp)
+            ) {
+                Text("💾 保存")
+            }
+            Button(
+                onClick = onCancel,
+                modifier = Modifier.weight(1f),
                 colors = ButtonDefaults.buttonColors(containerColor = Color(0xFF94A3B8)),
-                shape = RoundedCornerShape(12.dp)) { Text("取消") }
+                shape = RoundedCornerShape(12.dp)
+            ) {
+                Text("取消")
+            }
         }
     }
 }
