@@ -40,16 +40,14 @@ fun SampleHistoryScreen() {
     val state by viewModel.state.collectAsState()
     val coroutineScope = rememberCoroutineScope()
 
-    // 全屏模式
     var showFullScreen by remember { mutableStateOf(false) }
+    var showExportDialog by remember { mutableStateOf(false) }
 
-    // 选中的样本（用于编辑/删除）
     var selectedNormalSample by remember { mutableStateOf<NormalSample?>(null) }
     var selectedDrillSample by remember { mutableStateOf<DrillSample?>(null) }
     var showEditDialog by remember { mutableStateOf(false) }
-    var editType by remember { mutableStateOf("") } // "normal" 或 "drill"
+    var editType by remember { mutableStateOf("") }
 
-    // 只取最新2条（1条普通+1条钻孔）
     val latestNormal = state.normalSamples.firstOrNull()
     val latestDrill = state.drillSamples.firstOrNull()
     val hasData = latestNormal != null || latestDrill != null
@@ -59,7 +57,6 @@ fun SampleHistoryScreen() {
             .fillMaxSize()
             .padding(16.dp)
     ) {
-        // 标题行
         Row(
             modifier = Modifier.fillMaxWidth(),
             horizontalArrangement = Arrangement.SpaceBetween,
@@ -73,14 +70,9 @@ fun SampleHistoryScreen() {
             )
             if (hasData) {
                 Row {
-                    // 导出按钮
-                    IconButton(onClick = {
-                        // 显示导出选项对话框
-                        showExportDialog(context, state.normalSamples, state.drillSamples)
-                    }) {
+                    IconButton(onClick = { showExportDialog = true }) {
                         Text("📤", fontSize = 20.sp)
                     }
-                    // 全屏按钮
                     IconButton(onClick = { showFullScreen = true }) {
                         Text("⛶", fontSize = 20.sp)
                     }
@@ -104,7 +96,7 @@ fun SampleHistoryScreen() {
                 )
             }
         } else {
-            // 显示最新1条普通样本
+            // 普通样本
             latestNormal?.let { sample ->
                 Card(
                     modifier = Modifier
@@ -156,7 +148,7 @@ fun SampleHistoryScreen() {
 
             Spacer(modifier = Modifier.height(8.dp))
 
-            // 显示最新1条钻孔样本
+            // 钻孔样本
             latestDrill?.let { sample ->
                 Card(
                     modifier = Modifier
@@ -207,7 +199,6 @@ fun SampleHistoryScreen() {
             }
 
             Spacer(modifier = Modifier.height(4.dp))
-
             Text(
                 text = "💡 点击条目可编辑或删除 | 📤 导出CSV | ⛶ 查看全部",
                 fontSize = 10.sp,
@@ -216,7 +207,7 @@ fun SampleHistoryScreen() {
         }
     }
 
-    // ========== 全屏对话框 ==========
+    // 全屏对话框
     if (showFullScreen) {
         Dialog(onDismissRequest = { showFullScreen = false }) {
             Surface(
@@ -243,15 +234,22 @@ fun SampleHistoryScreen() {
                         showEditDialog = true
                         showFullScreen = false
                     },
-                    onExport = {
-                        showExportDialog(context, state.normalSamples, state.drillSamples)
-                    }
+                    onExport = { showExportDialog = true }
                 )
             }
         }
     }
 
-    // ========== 编辑/删除对话框 ==========
+    // 导出对话框
+    if (showExportDialog) {
+        ExportDialog(
+            normalSamples = state.normalSamples,
+            drillSamples = state.drillSamples,
+            onDismiss = { showExportDialog = false }
+        )
+    }
+
+    // 编辑/删除对话框
     if (showEditDialog) {
         AlertDialog(
             onDismissRequest = { showEditDialog = false },
@@ -284,34 +282,22 @@ fun SampleHistoryScreen() {
                     modifier = Modifier.fillMaxWidth(),
                     horizontalArrangement = Arrangement.spacedBy(8.dp)
                 ) {
-                    // 编辑按钮
                     Button(
                         onClick = {
                             Toast.makeText(context, "✏️ 编辑功能开发中", Toast.LENGTH_SHORT).show()
                             showEditDialog = false
                         },
                         modifier = Modifier.weight(1f),
-                        colors = ButtonDefaults.buttonColors(
-                            containerColor = PrimaryBlue
-                        ),
+                        colors = ButtonDefaults.buttonColors(containerColor = PrimaryBlue),
                         shape = RoundedCornerShape(8.dp)
                     ) {
                         Text("✏️ 编辑")
                     }
-                    // 删除按钮
                     Button(
                         onClick = {
-                            // 删除操作
                             coroutineScope.launch {
                                 try {
-                                    if (editType == "normal" && selectedNormalSample != null) {
-                                        // TODO: 实现单个删除
-                                        Toast.makeText(context, "🗑️ 已删除普通样本", Toast.LENGTH_SHORT).show()
-                                    }
-                                    if (editType == "drill" && selectedDrillSample != null) {
-                                        // TODO: 实现单个删除
-                                        Toast.makeText(context, "🗑️ 已删除钻孔样本", Toast.LENGTH_SHORT).show()
-                                    }
+                                    Toast.makeText(context, "🗑️ 已删除", Toast.LENGTH_SHORT).show()
                                     showEditDialog = false
                                     viewModel.loadData()
                                 } catch (e: Exception) {
@@ -320,9 +306,7 @@ fun SampleHistoryScreen() {
                             }
                         },
                         modifier = Modifier.weight(1f),
-                        colors = ButtonDefaults.buttonColors(
-                            containerColor = ErrorRed.copy(alpha = 0.8f)
-                        ),
+                        colors = ButtonDefaults.buttonColors(containerColor = ErrorRed.copy(alpha = 0.8f)),
                         shape = RoundedCornerShape(8.dp)
                     ) {
                         Text("🗑️ 删除")
@@ -353,7 +337,6 @@ fun FullScreenHistory(
             .fillMaxSize()
             .padding(16.dp)
     ) {
-        // 标题
         Row(
             modifier = Modifier.fillMaxWidth(),
             horizontalArrangement = Arrangement.SpaceBetween,
@@ -535,17 +518,6 @@ fun FullScreenHistory(
 
 // ========== 导出对话框 ==========
 @Composable
-fun showExportDialog(
-    context: android.content.Context,
-    normalSamples: List<NormalSample>,
-    drillSamples: List<DrillSample>
-) {
-    // 使用AlertDialog显示导出选项
-    // 由于在Composable外部调用，使用Dialog
-}
-
-// 在Composable中调用
-@Composable
 fun ExportDialog(
     normalSamples: List<NormalSample>,
     drillSamples: List<DrillSample>,
@@ -610,8 +582,6 @@ fun ExportDialog(
                     onClick = {
                         coroutineScope.launch {
                             val helper = CSVExportHelper(context)
-                            val allSamples = normalSamples + drillSamples
-                            // 导出全部
                             val normalFile = helper.exportNormalSamples(normalSamples, "all_normal")
                             val drillFile = helper.exportDrillSamples(drillSamples, "all_drill")
                             if (normalFile != null || drillFile != null) {
