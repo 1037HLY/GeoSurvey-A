@@ -30,8 +30,8 @@ import kotlinx.coroutines.launch
 import java.text.SimpleDateFormat
 import java.util.*
 
-// 使用不同的函数名避免冲突
-private fun formatDateTime(timestamp: Long): String {
+// ⭐ 使用唯一的函数名
+private fun formatSampleTime(timestamp: Long): String {
     val sdf = SimpleDateFormat("MM-dd HH:mm", Locale.getDefault())
     return sdf.format(Date(timestamp))
 }
@@ -80,7 +80,8 @@ fun SampleHistoryScreen() {
                 .weight(1f),
             horizontalArrangement = Arrangement.spacedBy(8.dp)
         ) {
-            NormalSamplePanel(
+            // ⭐ 左侧普通样本面板
+            NormalSamplePanel2(
                 samples = state.normalSamples,
                 onSampleClick = { sample ->
                     selectedNormalSample = sample
@@ -106,7 +107,8 @@ fun SampleHistoryScreen() {
                 }
             )
 
-            DrillSamplePanel(
+            // ⭐ 右侧钻孔样本面板
+            DrillSamplePanel2(
                 samples = state.drillSamples,
                 onSampleClick = { sample ->
                     selectedDrillSample = sample
@@ -134,6 +136,7 @@ fun SampleHistoryScreen() {
         }
     }
 
+    // 普通样本详情对话框
     if (showNormalDetail && selectedNormalSample != null) {
         Dialog(onDismissRequest = { showNormalDetail = false }) {
             Surface(
@@ -145,7 +148,7 @@ fun SampleHistoryScreen() {
                 color = Color(0xFFF8FAFC)
             ) {
                 if (isEditingNormal && editNormalSample != null) {
-                    NormalSampleEditDialog(
+                    NormalSampleEditDialog2(
                         sample = editNormalSample!!,
                         onSave = {
                             Toast.makeText(context, "已更新", Toast.LENGTH_SHORT).show()
@@ -159,7 +162,7 @@ fun SampleHistoryScreen() {
                         }
                     )
                 } else {
-                    NormalSampleDetailDialog(
+                    NormalSampleDetailDialog2(
                         sample = selectedNormalSample!!,
                         onEdit = {
                             isEditingNormal = true
@@ -172,6 +175,7 @@ fun SampleHistoryScreen() {
         }
     }
 
+    // 钻孔样本详情对话框
     if (showDrillDetail && selectedDrillSample != null) {
         Dialog(onDismissRequest = { showDrillDetail = false }) {
             Surface(
@@ -183,7 +187,7 @@ fun SampleHistoryScreen() {
                 color = Color(0xFFF8FAFC)
             ) {
                 if (isEditingDrill && editDrillSample != null) {
-                    DrillSampleEditDialog(
+                    DrillSampleEditDialog2(
                         sample = editDrillSample!!,
                         onSave = {
                             Toast.makeText(context, "已更新", Toast.LENGTH_SHORT).show()
@@ -197,7 +201,7 @@ fun SampleHistoryScreen() {
                         }
                     )
                 } else {
-                    DrillSampleDetailDialog(
+                    DrillSampleDetailDialog2(
                         sample = selectedDrillSample!!,
                         onEdit = {
                             isEditingDrill = true
@@ -213,7 +217,7 @@ fun SampleHistoryScreen() {
 
 // ========== 普通样本面板 ==========
 @Composable
-fun NormalSamplePanel(
+fun NormalSamplePanel2(
     samples: List<NormalSample>,
     onSampleClick: (NormalSample) -> Unit,
     onSampleLongClick: (NormalSample) -> Unit,
@@ -274,7 +278,7 @@ fun NormalSamplePanel(
                     verticalArrangement = Arrangement.spacedBy(4.dp)
                 ) {
                     items(samples) { sample ->
-                        NormalSampleCard(
+                        NormalSampleCard2(
                             sample = sample,
                             onClick = { onSampleClick(sample) },
                             onLongClick = { onSampleLongClick(sample) }
@@ -288,7 +292,7 @@ fun NormalSamplePanel(
 
 // ========== 钻孔样本面板 ==========
 @Composable
-fun DrillSamplePanel(
+fun DrillSamplePanel2(
     samples: List<DrillSample>,
     onSampleClick: (DrillSample) -> Unit,
     onSampleLongClick: (DrillSample) -> Unit,
@@ -349,7 +353,7 @@ fun DrillSamplePanel(
                     verticalArrangement = Arrangement.spacedBy(4.dp)
                 ) {
                     items(samples) { sample ->
-                        DrillSampleCard(
+                        DrillSampleCard2(
                             sample = sample,
                             onClick = { onSampleClick(sample) },
                             onLongClick = { onSampleLongClick(sample) }
@@ -363,7 +367,7 @@ fun DrillSamplePanel(
 
 // ========== 普通样本卡片 ==========
 @Composable
-fun NormalSampleCard(
+fun NormalSampleCard2(
     sample: NormalSample,
     onClick: () -> Unit,
     onLongClick: () -> Unit
@@ -393,7 +397,7 @@ fun NormalSampleCard(
                     color = Color(0xFF0F172A)
                 )
                 Text(
-                    text = formatDateTime(sample.timestamp),
+                    text = formatSampleTime(sample.timestamp),
                     fontSize = 10.sp,
                     color = Color(0xFF94A3B8)
                 )
@@ -419,7 +423,7 @@ fun NormalSampleCard(
 
 // ========== 钻孔样本卡片 ==========
 @Composable
-fun DrillSampleCard(
+fun DrillSampleCard2(
     sample: DrillSample,
     onClick: () -> Unit,
     onLongClick: () -> Unit
@@ -449,7 +453,7 @@ fun DrillSampleCard(
                     color = Color(0xFF0F172A)
                 )
                 Text(
-                    text = formatDateTime(sample.timestamp),
+                    text = formatSampleTime(sample.timestamp),
                     fontSize = 10.sp,
                     color = Color(0xFF94A3B8)
                 )
@@ -480,7 +484,7 @@ fun DrillSampleCard(
 
 // ========== 普通样本详情对话框 ==========
 @Composable
-fun NormalSampleDetailDialog(
+fun NormalSampleDetailDialog2(
     sample: NormalSample,
     onEdit: () -> Unit,
     onClose: () -> Unit
@@ -525,7 +529,7 @@ fun NormalSampleDetailDialog(
                     Text("海拔: ${String.format("%.1f", it)}m", fontSize = 14.sp)
                 }
                 Text("描述: ${sample.description}", fontSize = 14.sp)
-                Text("时间: ${formatDateTime(sample.timestamp)}", fontSize = 14.sp)
+                Text("时间: ${formatSampleTime(sample.timestamp)}", fontSize = 14.sp)
             }
         }
     }
@@ -533,7 +537,7 @@ fun NormalSampleDetailDialog(
 
 // ========== 钻孔样本详情对话框 ==========
 @Composable
-fun DrillSampleDetailDialog(
+fun DrillSampleDetailDialog2(
     sample: DrillSample,
     onEdit: () -> Unit,
     onClose: () -> Unit
@@ -577,7 +581,7 @@ fun DrillSampleDetailDialog(
                 Text("重量: ${sample.weight}kg", fontSize = 14.sp)
                 Text("岩心直径: ${sample.coreDiameter}mm", fontSize = 14.sp)
                 Text("描述: ${sample.description}", fontSize = 14.sp)
-                Text("时间: ${formatDateTime(sample.timestamp)}", fontSize = 14.sp)
+                Text("时间: ${formatSampleTime(sample.timestamp)}", fontSize = 14.sp)
             }
         }
     }
@@ -585,7 +589,7 @@ fun DrillSampleDetailDialog(
 
 // ========== 普通样本编辑对话框 ==========
 @Composable
-fun NormalSampleEditDialog(
+fun NormalSampleEditDialog2(
     sample: NormalSample,
     onSave: () -> Unit,
     onCancel: () -> Unit
@@ -634,7 +638,7 @@ fun NormalSampleEditDialog(
 
 // ========== 钻孔样本编辑对话框 ==========
 @Composable
-fun DrillSampleEditDialog(
+fun DrillSampleEditDialog2(
     sample: DrillSample,
     onSave: () -> Unit,
     onCancel: () -> Unit
