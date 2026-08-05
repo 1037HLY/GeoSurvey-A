@@ -40,14 +40,16 @@ fun SampleHistoryScreen() {
     val state by viewModel.state.collectAsState()
     val coroutineScope = rememberCoroutineScope()
 
+    // 控制全屏对话框
     var showFullScreen by remember { mutableStateOf(false) }
+    // 控制导出对话框
     var showExportDialog by remember { mutableStateOf(false) }
-
-    var selectedNormalSample by remember { mutableStateOf<NormalSample?>(null) }
-    var selectedDrillSample by remember { mutableStateOf<DrillSample?>(null) }
+    // 控制编辑/删除对话框
     var showEditDialog by remember { mutableStateOf(false) }
-    var editType by remember { mutableStateOf("") }
+    var editingNormal by remember { mutableStateOf<NormalSample?>(null) }
+    var editingDrill by remember { mutableStateOf<DrillSample?>(null) }
 
+    // 取最新2条：1条普通 + 1条钻孔
     val latestNormal = state.normalSamples.firstOrNull()
     val latestDrill = state.drillSamples.firstOrNull()
     val hasData = latestNormal != null || latestDrill != null
@@ -57,6 +59,7 @@ fun SampleHistoryScreen() {
             .fillMaxSize()
             .padding(16.dp)
     ) {
+        // 标题行
         Row(
             modifier = Modifier.fillMaxWidth(),
             horizontalArrangement = Arrangement.SpaceBetween,
@@ -70,9 +73,11 @@ fun SampleHistoryScreen() {
             )
             if (hasData) {
                 Row {
+                    // 导出按钮
                     IconButton(onClick = { showExportDialog = true }) {
                         Text("📤", fontSize = 20.sp)
                     }
+                    // 全屏按钮
                     IconButton(onClick = { showFullScreen = true }) {
                         Text("⛶", fontSize = 20.sp)
                     }
@@ -82,6 +87,7 @@ fun SampleHistoryScreen() {
 
         Spacer(modifier = Modifier.height(12.dp))
 
+        // 如果没有数据
         if (!hasData) {
             Box(
                 modifier = Modifier
@@ -95,119 +101,119 @@ fun SampleHistoryScreen() {
                     color = Color(0xFF94A3B8)
                 )
             }
-        } else {
-            // 普通样本
-            latestNormal?.let { sample ->
-                Card(
-                    modifier = Modifier
-                        .fillMaxWidth()
-                        .clickable {
-                            selectedNormalSample = sample
-                            editType = "normal"
-                            showEditDialog = true
-                        },
-                    colors = CardDefaults.cardColors(
-                        containerColor = Color.White.copy(alpha = 0.7f)
-                    ),
-                    shape = RoundedCornerShape(12.dp),
-                    elevation = CardDefaults.cardElevation(defaultElevation = 2.dp)
-                ) {
-                    Row(
-                        modifier = Modifier
-                            .fillMaxWidth()
-                            .padding(12.dp),
-                        horizontalArrangement = Arrangement.SpaceBetween,
-                        verticalAlignment = Alignment.CenterVertically
-                    ) {
-                        Column {
-                            Text(
-                                text = "📦 ${sample.sampleNumber} - ${sample.sampleName}",
-                                fontSize = 14.sp,
-                                fontWeight = FontWeight.Medium,
-                                color = Color(0xFF0F172A)
-                            )
-                            Text(
-                                text = "类型: ${sample.sampleType} | 重量: ${sample.weight}kg",
-                                fontSize = 12.sp,
-                                color = Color(0xFF475569)
-                            )
-                            Text(
-                                text = "点击编辑/删除",
-                                fontSize = 10.sp,
-                                color = Color(0xFF94A3B8)
-                            )
-                        }
-                        Text(
-                            text = formatSampleTime(sample.timestamp),
-                            fontSize = 11.sp,
-                            color = Color(0xFF94A3B8)
-                        )
-                    }
-                }
-            }
-
-            Spacer(modifier = Modifier.height(8.dp))
-
-            // 钻孔样本
-            latestDrill?.let { sample ->
-                Card(
-                    modifier = Modifier
-                        .fillMaxWidth()
-                        .clickable {
-                            selectedDrillSample = sample
-                            editType = "drill"
-                            showEditDialog = true
-                        },
-                    colors = CardDefaults.cardColors(
-                        containerColor = Color.White.copy(alpha = 0.7f)
-                    ),
-                    shape = RoundedCornerShape(12.dp),
-                    elevation = CardDefaults.cardElevation(defaultElevation = 2.dp)
-                ) {
-                    Row(
-                        modifier = Modifier
-                            .fillMaxWidth()
-                            .padding(12.dp),
-                        horizontalArrangement = Arrangement.SpaceBetween,
-                        verticalAlignment = Alignment.CenterVertically
-                    ) {
-                        Column {
-                            Text(
-                                text = "🪨 ${sample.sampleNumber} - ${sample.sampleName}",
-                                fontSize = 14.sp,
-                                fontWeight = FontWeight.Medium,
-                                color = Color(0xFF0F172A)
-                            )
-                            Text(
-                                text = "井深: ${sample.fromDepth}-${sample.toDepth}m | 采取率: ${sample.recoveryRate}%",
-                                fontSize = 12.sp,
-                                color = Color(0xFF475569)
-                            )
-                            Text(
-                                text = "点击编辑/删除",
-                                fontSize = 10.sp,
-                                color = Color(0xFF94A3B8)
-                            )
-                        }
-                        Text(
-                            text = formatSampleTime(sample.timestamp),
-                            fontSize = 11.sp,
-                            color = Color(0xFF94A3B8)
-                        )
-                    }
-                }
-            }
-
-            Spacer(modifier = Modifier.height(4.dp))
-            Text(
-                text = "💡 点击条目可编辑或删除 | 📤 导出CSV | ⛶ 查看全部",
-                fontSize = 10.sp,
-                color = Color(0xFF94A3B8)
-            )
+            return@Column
         }
+
+        // ⭐ 显示最新1条普通样本
+        latestNormal?.let { sample ->
+            Card(
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .clickable {
+                        editingNormal = sample
+                        showEditDialog = true
+                    },
+                colors = CardDefaults.cardColors(
+                    containerColor = Color.White.copy(alpha = 0.7f)
+                ),
+                shape = RoundedCornerShape(12.dp),
+                elevation = CardDefaults.cardElevation(defaultElevation = 2.dp)
+            ) {
+                Row(
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .padding(12.dp),
+                    horizontalArrangement = Arrangement.SpaceBetween,
+                    verticalAlignment = Alignment.CenterVertically
+                ) {
+                    Column {
+                        Text(
+                            text = "📦 ${sample.sampleNumber} - ${sample.sampleName}",
+                            fontSize = 14.sp,
+                            fontWeight = FontWeight.Medium,
+                            color = Color(0xFF0F172A)
+                        )
+                        Text(
+                            text = "类型: ${sample.sampleType} | 重量: ${sample.weight}kg",
+                            fontSize = 12.sp,
+                            color = Color(0xFF475569)
+                        )
+                        Text(
+                            text = "点击编辑/删除",
+                            fontSize = 10.sp,
+                            color = Color(0xFF94A3B8)
+                        )
+                    }
+                    Text(
+                        text = formatSampleTime(sample.timestamp),
+                        fontSize = 11.sp,
+                        color = Color(0xFF94A3B8)
+                    )
+                }
+            }
+        }
+
+        Spacer(modifier = Modifier.height(8.dp))
+
+        // ⭐ 显示最新1条钻孔样本
+        latestDrill?.let { sample ->
+            Card(
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .clickable {
+                        editingDrill = sample
+                        showEditDialog = true
+                    },
+                colors = CardDefaults.cardColors(
+                    containerColor = Color.White.copy(alpha = 0.7f)
+                ),
+                shape = RoundedCornerShape(12.dp),
+                elevation = CardDefaults.cardElevation(defaultElevation = 2.dp)
+            ) {
+                Row(
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .padding(12.dp),
+                    horizontalArrangement = Arrangement.SpaceBetween,
+                    verticalAlignment = Alignment.CenterVertically
+                ) {
+                    Column {
+                        Text(
+                            text = "🪨 ${sample.sampleNumber} - ${sample.sampleName}",
+                            fontSize = 14.sp,
+                            fontWeight = FontWeight.Medium,
+                            color = Color(0xFF0F172A)
+                        )
+                        Text(
+                            text = "井深: ${sample.fromDepth}-${sample.toDepth}m | 采取率: ${sample.recoveryRate}%",
+                            fontSize = 12.sp,
+                            color = Color(0xFF475569)
+                        )
+                        Text(
+                            text = "点击编辑/删除",
+                            fontSize = 10.sp,
+                            color = Color(0xFF94A3B8)
+                        )
+                    }
+                    Text(
+                        text = formatSampleTime(sample.timestamp),
+                        fontSize = 11.sp,
+                        color = Color(0xFF94A3B8)
+                    )
+                }
+            }
+        }
+
+        Spacer(modifier = Modifier.height(8.dp))
+
+        Text(
+            text = "💡 点击条目可编辑/删除 | 📤 导出CSV | ⛶ 查看全部",
+            fontSize = 10.sp,
+            color = Color(0xFF94A3B8)
+        )
     }
 
-    // 全屏对话框
+    // ⭐ 全屏对话框
     if (showFullScreen) {
         Dialog(onDismissRequest = { showFullScreen = false }) {
             Surface(
@@ -223,14 +229,12 @@ fun SampleHistoryScreen() {
                     drillSamples = state.drillSamples,
                     onDismiss = { showFullScreen = false },
                     onEditNormal = { sample ->
-                        selectedNormalSample = sample
-                        editType = "normal"
+                        editingNormal = sample
                         showEditDialog = true
                         showFullScreen = false
                     },
                     onEditDrill = { sample ->
-                        selectedDrillSample = sample
-                        editType = "drill"
+                        editingDrill = sample
                         showEditDialog = true
                         showFullScreen = false
                     },
@@ -240,41 +244,130 @@ fun SampleHistoryScreen() {
         }
     }
 
-    // 导出对话框
+    // ⭐ 导出对话框
     if (showExportDialog) {
-        ExportDialog(
-            normalSamples = state.normalSamples,
-            drillSamples = state.drillSamples,
-            onDismiss = { showExportDialog = false }
+        AlertDialog(
+            onDismissRequest = { showExportDialog = false },
+            title = { Text("📤 导出CSV") },
+            text = {
+                Column {
+                    Text("选择要导出的数据：", fontSize = 13.sp)
+                    Spacer(modifier = Modifier.height(12.dp))
+
+                    // 导出普通样本
+                    Button(
+                        onClick = {
+                            coroutineScope.launch {
+                                val helper = CSVExportHelper(context)
+                                val file = helper.exportNormalSamples(state.normalSamples)
+                                if (file != null) {
+                                    Toast.makeText(context, "导出成功: ${file.name}", Toast.LENGTH_LONG).show()
+                                } else {
+                                    Toast.makeText(context, "导出失败", Toast.LENGTH_SHORT).show()
+                                }
+                                showExportDialog = false
+                            }
+                        },
+                        modifier = Modifier.fillMaxWidth(),
+                        colors = ButtonDefaults.buttonColors(containerColor = PrimaryBlue),
+                        shape = RoundedCornerShape(8.dp)
+                    ) {
+                        Text("📦 导出普通样本 (${state.normalSamples.size})")
+                    }
+
+                    Spacer(modifier = Modifier.height(8.dp))
+
+                    // 导出钻孔样本
+                    Button(
+                        onClick = {
+                            coroutineScope.launch {
+                                val helper = CSVExportHelper(context)
+                                val file = helper.exportDrillSamples(state.drillSamples)
+                                if (file != null) {
+                                    Toast.makeText(context, "导出成功: ${file.name}", Toast.LENGTH_LONG).show()
+                                } else {
+                                    Toast.makeText(context, "导出失败", Toast.LENGTH_SHORT).show()
+                                }
+                                showExportDialog = false
+                            }
+                        },
+                        modifier = Modifier.fillMaxWidth(),
+                        colors = ButtonDefaults.buttonColors(containerColor = AccentPurple),
+                        shape = RoundedCornerShape(8.dp)
+                    ) {
+                        Text("🪨 导出钻孔样本 (${state.drillSamples.size})")
+                    }
+
+                    Spacer(modifier = Modifier.height(8.dp))
+
+                    // 全部导出
+                    Button(
+                        onClick = {
+                            coroutineScope.launch {
+                                val helper = CSVExportHelper(context)
+                                val normalFile = helper.exportNormalSamples(state.normalSamples, "all_normal")
+                                val drillFile = helper.exportDrillSamples(state.drillSamples, "all_drill")
+                                if (normalFile != null || drillFile != null) {
+                                    Toast.makeText(context, "全部导出成功", Toast.LENGTH_LONG).show()
+                                } else {
+                                    Toast.makeText(context, "导出失败", Toast.LENGTH_SHORT).show()
+                                }
+                                showExportDialog = false
+                            }
+                        },
+                        modifier = Modifier.fillMaxWidth(),
+                        colors = ButtonDefaults.buttonColors(containerColor = SecondaryGreen),
+                        shape = RoundedCornerShape(8.dp)
+                    ) {
+                        Text("📤 全部导出 (${state.normalSamples.size + state.drillSamples.size})")
+                    }
+                }
+            },
+            confirmButton = {
+                TextButton(onClick = { showExportDialog = false }) {
+                    Text("取消")
+                }
+            }
         )
     }
 
-    // 编辑/删除对话框
+    // ⭐ 编辑/删除对话框
     if (showEditDialog) {
+        // 确定当前编辑的是普通还是钻孔
+        val isNormal = editingNormal != null
+        val sampleTitle = if (isNormal) {
+            "📦 ${editingNormal!!.sampleNumber} - ${editingNormal!!.sampleName}"
+        } else {
+            "🪨 ${editingDrill!!.sampleNumber} - ${editingDrill!!.sampleName}"
+        }
+
         AlertDialog(
-            onDismissRequest = { showEditDialog = false },
-            title = { Text(if (editType == "normal") "📦 编辑普通样本" else "🪨 编辑钻孔样本") },
+            onDismissRequest = { 
+                showEditDialog = false
+                editingNormal = null
+                editingDrill = null
+            },
+            title = { Text("✏️ 编辑/删除") },
             text = {
                 Column {
-                    if (editType == "normal" && selectedNormalSample != null) {
-                        val sample = selectedNormalSample!!
-                        Text("编号: ${sample.sampleNumber}")
-                        Text("名称: ${sample.sampleName}")
-                        Text("类型: ${sample.sampleType}")
-                        Text("重量: ${sample.weight}kg")
-                        Text("描述: ${sample.description}")
-                    }
-                    if (editType == "drill" && selectedDrillSample != null) {
-                        val sample = selectedDrillSample!!
-                        Text("编号: ${sample.sampleNumber}")
-                        Text("名称: ${sample.sampleName}")
-                        Text("井深: ${sample.fromDepth}-${sample.toDepth}m")
-                        Text("样长: ${sample.sampleLength}m")
-                        Text("采取率: ${sample.recoveryRate}%")
-                        Text("重量: ${sample.weight}kg")
-                    }
+                    Text(sampleTitle, fontSize = 16.sp, fontWeight = FontWeight.Bold)
                     Spacer(modifier = Modifier.height(8.dp))
-                    Text("选择操作：", fontSize = 13.sp, fontWeight = FontWeight.SemiBold)
+                    if (isNormal) {
+                        val s = editingNormal!!
+                        Text("类型: ${s.sampleType}")
+                        Text("重量: ${s.weight}kg")
+                        Text("位置: ${String.format("%.6f", s.latitude)}, ${String.format("%.6f", s.longitude)}")
+                        if (s.description.isNotEmpty()) Text("描述: ${s.description}")
+                    } else {
+                        val s = editingDrill!!
+                        Text("井深: ${s.fromDepth} - ${s.toDepth}m")
+                        Text("样长: ${s.sampleLength}m | 岩心长: ${s.coreLength}m")
+                        Text("采取率: ${s.recoveryRate}% | 重量: ${s.weight}kg")
+                        Text("岩心直径: ${s.coreDiameter}mm")
+                        if (s.description.isNotEmpty()) Text("描述: ${s.description}")
+                    }
+                    Spacer(modifier = Modifier.height(12.dp))
+                    Text("选择操作：", fontSize = 14.sp, fontWeight = FontWeight.SemiBold)
                 }
             },
             confirmButton = {
@@ -282,10 +375,13 @@ fun SampleHistoryScreen() {
                     modifier = Modifier.fillMaxWidth(),
                     horizontalArrangement = Arrangement.spacedBy(8.dp)
                 ) {
+                    // 编辑按钮
                     Button(
                         onClick = {
                             Toast.makeText(context, "✏️ 编辑功能开发中", Toast.LENGTH_SHORT).show()
                             showEditDialog = false
+                            editingNormal = null
+                            editingDrill = null
                         },
                         modifier = Modifier.weight(1f),
                         colors = ButtonDefaults.buttonColors(containerColor = PrimaryBlue),
@@ -293,12 +389,20 @@ fun SampleHistoryScreen() {
                     ) {
                         Text("✏️ 编辑")
                     }
+                    // 删除按钮
                     Button(
                         onClick = {
                             coroutineScope.launch {
                                 try {
-                                    Toast.makeText(context, "🗑️ 已删除", Toast.LENGTH_SHORT).show()
+                                    if (isNormal) {
+                                        // TODO: 实现单个删除
+                                        Toast.makeText(context, "🗑️ 已删除普通样本", Toast.LENGTH_SHORT).show()
+                                    } else {
+                                        Toast.makeText(context, "🗑️ 已删除钻孔样本", Toast.LENGTH_SHORT).show()
+                                    }
                                     showEditDialog = false
+                                    editingNormal = null
+                                    editingDrill = null
                                     viewModel.loadData()
                                 } catch (e: Exception) {
                                     Toast.makeText(context, "删除失败", Toast.LENGTH_SHORT).show()
@@ -314,7 +418,11 @@ fun SampleHistoryScreen() {
                 }
             },
             dismissButton = {
-                TextButton(onClick = { showEditDialog = false }) {
+                TextButton(onClick = { 
+                    showEditDialog = false
+                    editingNormal = null
+                    editingDrill = null
+                }) {
                     Text("取消")
                 }
             }
@@ -322,7 +430,7 @@ fun SampleHistoryScreen() {
     }
 }
 
-// ========== 全屏历史记录 ==========
+// ⭐ 全屏历史记录
 @Composable
 fun FullScreenHistory(
     normalSamples: List<NormalSample>,
@@ -337,6 +445,7 @@ fun FullScreenHistory(
             .fillMaxSize()
             .padding(16.dp)
     ) {
+        // 标题栏
         Row(
             modifier = Modifier.fillMaxWidth(),
             horizontalArrangement = Arrangement.SpaceBetween,
@@ -360,7 +469,7 @@ fun FullScreenHistory(
 
         Spacer(modifier = Modifier.height(12.dp))
 
-        // 上半部分：普通样本
+        // ⭐ 上半部分：普通样本列表
         Card(
             modifier = Modifier
                 .fillMaxWidth()
@@ -438,7 +547,7 @@ fun FullScreenHistory(
 
         Spacer(modifier = Modifier.height(8.dp))
 
-        // 下半部分：钻孔样本
+        // ⭐ 下半部分：钻孔样本列表
         Card(
             modifier = Modifier
                 .fillMaxWidth()
@@ -514,96 +623,4 @@ fun FullScreenHistory(
                 }
         }
     }
-}
-
-// ========== 导出对话框 ==========
-@Composable
-fun ExportDialog(
-    normalSamples: List<NormalSample>,
-    drillSamples: List<DrillSample>,
-    onDismiss: () -> Unit
-) {
-    val context = LocalContext.current
-    val coroutineScope = rememberCoroutineScope()
-
-    AlertDialog(
-        onDismissRequest = onDismiss,
-        title = { Text("📤 导出CSV") },
-        text = {
-            Column {
-                Text("选择要导出的数据：", fontSize = 13.sp)
-                Spacer(modifier = Modifier.height(12.dp))
-
-                Button(
-                    onClick = {
-                        coroutineScope.launch {
-                            val helper = CSVExportHelper(context)
-                            val file = helper.exportNormalSamples(normalSamples)
-                            if (file != null) {
-                                Toast.makeText(context, "导出成功: ${file.name}", Toast.LENGTH_LONG).show()
-                            } else {
-                                Toast.makeText(context, "导出失败", Toast.LENGTH_SHORT).show()
-                            }
-                            onDismiss()
-                        }
-                    },
-                    modifier = Modifier.fillMaxWidth(),
-                    colors = ButtonDefaults.buttonColors(containerColor = PrimaryBlue),
-                    shape = RoundedCornerShape(8.dp)
-                ) {
-                    Text("📦 导出普通样本 (${normalSamples.size})")
-                }
-
-                Spacer(modifier = Modifier.height(8.dp))
-
-                Button(
-                    onClick = {
-                        coroutineScope.launch {
-                            val helper = CSVExportHelper(context)
-                            val file = helper.exportDrillSamples(drillSamples)
-                            if (file != null) {
-                                Toast.makeText(context, "导出成功: ${file.name}", Toast.LENGTH_LONG).show()
-                            } else {
-                                Toast.makeText(context, "导出失败", Toast.LENGTH_SHORT).show()
-                            }
-                            onDismiss()
-                        }
-                    },
-                    modifier = Modifier.fillMaxWidth(),
-                    colors = ButtonDefaults.buttonColors(containerColor = AccentPurple),
-                    shape = RoundedCornerShape(8.dp)
-                ) {
-                    Text("🪨 导出钻孔样本 (${drillSamples.size})")
-                }
-
-                Spacer(modifier = Modifier.height(8.dp))
-
-                Button(
-                    onClick = {
-                        coroutineScope.launch {
-                            val helper = CSVExportHelper(context)
-                            val normalFile = helper.exportNormalSamples(normalSamples, "all_normal")
-                            val drillFile = helper.exportDrillSamples(drillSamples, "all_drill")
-                            if (normalFile != null || drillFile != null) {
-                                Toast.makeText(context, "全部导出成功", Toast.LENGTH_LONG).show()
-                            } else {
-                                Toast.makeText(context, "导出失败", Toast.LENGTH_SHORT).show()
-                            }
-                            onDismiss()
-                        }
-                    },
-                    modifier = Modifier.fillMaxWidth(),
-                    colors = ButtonDefaults.buttonColors(containerColor = SecondaryGreen),
-                    shape = RoundedCornerShape(8.dp)
-                ) {
-                    Text("📤 全部导出 (${normalSamples.size + drillSamples.size})")
-                }
-            }
-        },
-        confirmButton = {
-            TextButton(onClick = onDismiss) {
-                Text("取消")
-            }
-        }
-    )
 }
